@@ -1,0 +1,11 @@
+node_modules/
+.next/
+coverage/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+prisma/*.db
+prisma/*.db-journal

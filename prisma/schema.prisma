@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Note {
+  id        String         @id @default(cuid())
+  content   String
+  tags      String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  links     NoteTaskLink[]
+}
+
+model Task {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  deadline    DateTime?
+  status      String         @default("TODO")
+  priority    String         @default("MEDIUM")
+  tags        String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  completedAt DateTime?
+  links       NoteTaskLink[]
+}
+
+model NoteTaskLink {
+  id        String   @id @default(cuid())
+  noteId    String
+  taskId    String
+  createdAt DateTime @default(now())
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, taskId])
+  @@index([taskId])
+}
+
+model ActivityEvent {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  eventType  String
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
