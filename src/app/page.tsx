@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PrimaryNav } from "@/app/primary-nav";
 import { getRecommendations } from "@/server/recommendations";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +9,7 @@ export default async function TodayPage() {
 
   return (
     <main className="page-shell">
-      <nav className="page-nav" aria-label="Primary navigation">
-        <Link href="/">Today</Link>
-        <Link href="/notes">Notes</Link>
-        <Link href="/tasks">Tasks</Link>
-      </nav>
+      <PrimaryNav />
       <section className="page-header">
         <p className="page-kicker">Phase 3 Recommendations</p>
         <h1>Today</h1>

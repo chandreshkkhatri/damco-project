@@ -1,4 +1,5 @@
 import { linkNoteToTaskAction, unlinkNoteFromTaskAction, updateTaskAction } from "@/app/tasks/actions";
+import { PrimaryNav } from "@/app/primary-nav";
 import { listNotes } from "@/server/notes";
 import { getTask, taskPriorities, taskStatuses } from "@/server/tasks";
 import Link from "next/link";
@@ -25,11 +26,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
     return (
       <main className="page-shell">
-        <nav className="page-nav" aria-label="Primary navigation">
-          <Link href="/">Overview</Link>
-          <Link href="/notes">Notes</Link>
-          <Link href="/tasks">Tasks</Link>
-        </nav>
+        <PrimaryNav />
         <section className="page-header">
           <p className="page-kicker">Phase 2 Linking</p>
           <h1>Edit task</h1>

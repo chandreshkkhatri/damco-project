@@ -6,7 +6,7 @@ The product thesis is simple: capturing notes and tasks is not enough. The usefu
 
 ## Current Status
 
-Phase 3 recommendations are complete:
+Phase 4 weekly summaries are implemented:
 
 - Root-level Next.js app with TypeScript.
 - Prisma plus SQLite for local development.
@@ -14,7 +14,8 @@ Phase 3 recommendations are complete:
 - Basic tag support across notes and tasks.
 - Note-task linking from detail pages using the relational join model.
 - Today view with top-three deterministic task recommendations and optional Gemini explanation text.
-- Vitest integration coverage for health, database, notes API, tasks API, link lifecycle behavior, and recommendation ranking.
+- Weekly view with deterministic completed-work, carry-forward, recent-note, and theme summaries plus optional Gemini wording.
+- Vitest integration coverage for health, database, notes API, tasks API, link lifecycle behavior, recommendation ranking, and weekly summaries.
 - Production build and lint checks passing for the current slice.
 
 ## Stack
@@ -57,7 +58,7 @@ The default local database URL is `file:./dev.db`, which Prisma stores as `prism
 ## Environment Variables
 
 - `DATABASE_URL`: Prisma connection string for the app database.
-- `GEMINI_API_KEY`: optional Gemini key for AI-assisted recommendation explanations.
+- `GEMINI_API_KEY`: optional Gemini key for AI-assisted recommendation explanations and weekly summary wording.
 - `AI_PROVIDER`: optional provider selection flag. Leave unset or use `gemini` for the built-in provider.
 - `NEXT_PUBLIC_APP_NAME`: display name used by the app and health route.
 
@@ -81,19 +82,21 @@ Then run `npm run dev` and smoke-test the app locally:
 8. Open the linked task detail page and verify the note appears in linked notes.
 9. Unlink from either detail page and verify the relationship disappears from both sides.
 10. Return to `/` and verify Today shows at most three open tasks with scores, reason chips, and deterministic fallback explanations when no Gemini key is configured.
+11. Open `/weekly` and verify the page shows the current week, completed work, carry-forward open work, recent notes, themes, and deterministic fallback wording without requiring a Gemini key.
+12. Optional AI smoke test: set `AI_PROVIDER=gemini` and `GEMINI_API_KEY`, restart the dev server, open `/weekly`, and verify only the summary prose switches to AI-assisted wording while the grouped evidence stays the same.
 
-## Phase 3 Exit Criteria
+## Phase 4 Exit Criteria
 
-Phase 3 is complete when:
+Phase 4 is complete when:
 
-- The Today page ranks open tasks without manual database edits.
-- Completed tasks are excluded from recommendations.
-- Linked recent notes can influence ranking.
-- AI explanation failure or missing API keys fall back to deterministic explanations.
+- The Weekly page answers what happened this week without manual database edits.
+- Completed tasks, carry-forward open tasks, recent notes, and themes are separated clearly.
+- Older notes and tasks outside the weekly window do not pollute the summary.
+- AI wording failure or missing API keys fall back to deterministic summary text.
 - Integration tests, lint, and production build all pass for the slice.
 
 ## Next Phases
 
-The next slice adds weekly summaries. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
+The next slice prepares the project for the final submission. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
 
 

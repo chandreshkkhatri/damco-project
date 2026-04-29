@@ -1,4 +1,5 @@
 import { createTaskAction } from "@/app/tasks/actions";
+import { PrimaryNav } from "@/app/primary-nav";
 import { listTasks, taskPriorities, taskStatuses, type TaskDto } from "@/server/tasks";
 import Link from "next/link";
 
@@ -9,11 +10,7 @@ export default async function TasksPage() {
 
   return (
     <main className="page-shell">
-      <nav className="page-nav" aria-label="Primary navigation">
-        <Link href="/">Overview</Link>
-        <Link href="/notes">Notes</Link>
-        <Link href="/tasks">Tasks</Link>
-      </nav>
+      <PrimaryNav />
       <section className="page-header">
         <p className="page-kicker">Phase 1 Capture</p>
         <h1>Tasks</h1>

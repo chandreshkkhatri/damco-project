@@ -1,4 +1,5 @@
 import { linkTaskToNoteAction, unlinkTaskFromNoteAction, updateNoteAction } from "@/app/notes/actions";
+import { PrimaryNav } from "@/app/primary-nav";
 import { getNote } from "@/server/notes";
 import { listTasks } from "@/server/tasks";
 import { notFound } from "next/navigation";
@@ -24,11 +25,7 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
 
     return (
       <main className="page-shell">
-        <nav className="page-nav" aria-label="Primary navigation">
-          <Link href="/">Overview</Link>
-          <Link href="/notes">Notes</Link>
-          <Link href="/tasks">Tasks</Link>
-        </nav>
+        <PrimaryNav />
         <section className="page-header">
           <p className="page-kicker">Phase 2 Linking</p>
           <h1>Edit note</h1>

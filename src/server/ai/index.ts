@@ -1,16 +1,32 @@
 import { GeminiRecommendationExplanationProvider } from "@/server/ai/gemini";
-import type { RecommendationExplanationProvider } from "@/server/ai/provider";
+import type { RecommendationExplanationProvider, WeeklySummaryProvider } from "@/server/ai/provider";
 
-export function getRecommendationExplanationProvider(): RecommendationExplanationProvider | null {
+function getGeminiApiKey() {
   if (process.env.AI_PROVIDER && process.env.AI_PROVIDER !== "gemini") {
     return null;
   }
 
-  if (!process.env.GEMINI_API_KEY) {
+  return process.env.GEMINI_API_KEY ?? null;
+}
+
+export function getRecommendationExplanationProvider(): RecommendationExplanationProvider | null {
+  const apiKey = getGeminiApiKey();
+
+  if (!apiKey) {
     return null;
   }
 
-  return new GeminiRecommendationExplanationProvider(process.env.GEMINI_API_KEY);
+  return new GeminiRecommendationExplanationProvider(apiKey);
 }
 
-export type { RecommendationExplanationProvider } from "@/server/ai/provider";
+export function getWeeklySummaryProvider(): WeeklySummaryProvider | null {
+  const apiKey = getGeminiApiKey();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  return new GeminiRecommendationExplanationProvider(apiKey);
+}
+
+export type { RecommendationExplanationProvider, WeeklySummaryProvider } from "@/server/ai/provider";

@@ -269,23 +269,63 @@ Answer the demo question: "What did I work on this week?"
 
 ### Scope
 
-- Add a weekly summary endpoint or server action.
-- Summarize notes, completed tasks, pending tasks, and dominant themes.
-- Use deterministic grouping first, then optional AI wording.
-- Add UI for submitting or triggering the weekly query.
+- Add a weekly summary service that answers the question from existing notes, tasks, and note-task links.
+- Define the default week as local Monday 00:00 through the current time, with clock injection for tests.
+- Summarize completed tasks, carry-forward pending tasks, recent notes, dominant themes, and the exact summary period.
+- Use deterministic grouping and evidence selection as the source of truth, then optionally let AI rewrite only the summary prose.
+- Add a dedicated server-rendered `/weekly` page that calls the service directly and is discoverable from the existing navigation.
+- Avoid schema changes and avoid depending on `ActivityEvent`, since no event capture behavior writes to it yet.
+
+### Expected Files
+
+- New service: `src/server/weekly-summary.ts`.
+- Updated AI boundary: `src/server/ai/provider.ts`, `src/server/ai/gemini.ts`, and `src/server/ai/index.ts`.
+- UI: `src/app/weekly/page.tsx`, plus navigation updates where the current page navigation lives.
+- Documentation: `README.md` QA directions and status.
+- Validation: `tests/integration/weekly-summary.test.ts`.
+
+### Test Strategy
+
+- Test weekly summary behavior through the service with real Prisma reads and writes, but no live AI calls.
+- Use a fixed `now` so Monday week boundaries and older-item behavior are deterministic.
+- Seed completed tasks, open tasks, recent notes, older notes, and linked context with small explicit fixtures.
+- Verify AI success can replace deterministic summary prose without changing grouped evidence.
+- Verify AI failure falls back to the deterministic summary.
+- Validate the `/weekly` page through TypeScript, lint, and production build rather than adding frontend test tooling in this phase.
 
 ### Integration Tests
 
 - Verify weekly summary includes completed work from the current week.
 - Verify pending work is separated from completed work.
 - Verify older notes/tasks are excluded or clearly marked as outside the period.
+- Verify dominant themes are derived from tags when tags are present.
+- Verify AI success updates only summary wording while preserving deterministic evidence.
 - Verify AI fallback produces a useful deterministic summary.
 
 ### Exit Criteria
 
 - Weekly query can be demoed with predictable data.
 - Summary behavior is covered without requiring a live AI call.
+- `/weekly` works without `GEMINI_API_KEY` and clearly indicates deterministic fallback wording.
+- AI wording does not introduce unsupported facts or alter grouped evidence.
 - Phase completion commit is ready after checks pass.
+
+### Implementation Notes
+
+- Prefer `getWeeklySummary()` and `WeeklySummaryDto` names to keep the phase framed as a computed feature rather than a chat endpoint.
+- Keep completed tasks as the strongest signal for work done, recent notes as context, and open due or recently updated tasks as carry-forward work.
+- Prefer tag-based theme extraction; use simple content/title keywords only when tags are absent.
+- Add weekly-summary-specific provider types instead of overloading recommendation explanation types.
+- Use the same fetch-based Gemini implementation and timeout behavior already used for recommendation explanations.
+- Do not add a public weekly summary API route unless a later phase needs one; the server-rendered page can call the service directly.
+
+### Completion Notes
+
+- The `/weekly` page now answers the weekly summary question with completed tasks, carry-forward tasks, recent notes, theme counts, summary text, and summary source.
+- `src/server/weekly-summary.ts` computes the week as local Monday 00:00 through the current time and keeps deterministic evidence selection independent from AI wording.
+- The AI boundary now includes weekly-summary-specific provider types, and the Gemini provider can generate recommendation explanations or weekly summary wording with the existing timeout behavior.
+- Primary navigation is shared through `src/app/primary-nav.tsx` so Today, Weekly, Notes, and Tasks stay discoverable across core pages.
+- Weekly summary integration tests cover current-week evidence, older item exclusion, tag themes, AI wording success, and deterministic fallback.
 
 ## Phase 5: Polish and Submission
 
