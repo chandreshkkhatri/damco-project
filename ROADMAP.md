@@ -335,22 +335,49 @@ Prepare the project for Damco review and the final walkthrough video.
 
 ### Scope
 
-- Improve README setup and architecture documentation.
-- Add seed data for a reliable demo.
-- Add screenshots or a short demo script if useful.
-- Review failure modes and tradeoffs in the documentation.
-- Run full test suite and fix regressions caused by project code.
+- Improve README setup, architecture, product narrative, and demo-flow documentation for a fresh reviewer.
+- Add a deterministic seed script for a reliable local demo with notes, linked tasks, recommendations, and weekly summary evidence.
+- Add an npm script for resetting/loading demo data without requiring manual database edits.
+- Add a concise final walkthrough script covering problem, demo path, architecture, tradeoffs, and failure modes.
+- Review environment variable docs and AI fallback behavior so the app remains demoable without live Gemini access.
+- Run the full validation suite and fix regressions caused by project code.
+
+### Expected Files
+
+- Demo data: `scripts/seed-demo.mjs` or a similarly small root-owned script.
+- Package scripts: `package.json` for a `db:seed` or `demo:seed` command.
+- Documentation: `README.md` and possibly `ROADMAP.md` completion notes.
+- Optional supporting docs: a short demo script section in `README.md` rather than a separate document unless the README becomes hard to scan.
+
+### Test Strategy
+
+- Keep existing integration tests as the regression gate for product behavior.
+- Smoke-test the seed script against the local SQLite database after `npm run db:push`.
+- Avoid adding Playwright unless there is a clear need and enough time; manual QA plus integration coverage is sufficient for this assessment slice.
+- Do not broaden app features during polish unless a reviewer-facing gap blocks the demo.
 
 ### Integration Tests
 
 - Run all existing integration and end-to-end tests.
-- Add one happy-path demo flow test if Playwright is already configured.
+- Add or adjust integration coverage only if the seed/polish work changes behavior.
+- Verify seeded demo data produces at least one Today recommendation and one Weekly summary item.
 
 ### Exit Criteria
 
 - The repo is understandable from a fresh clone.
 - The demo flow is reliable.
+- Seed data can recreate the demo state locally without manual database edits.
+- README explains setup, architecture, core tradeoffs, AI fallback behavior, and final walkthrough flow.
+- `npm run test`, `npm run lint`, and `CI=1 npm run build` pass.
 - The final commit is ready after checks pass.
+
+### Implementation Notes
+
+- Use existing service functions where practical for seed data, or Prisma directly if that keeps the script simpler and idempotent.
+- Make the seed script idempotent by clearing owned demo records or using stable unique content/title markers before recreating fixtures.
+- Seed at least: two notes, three open tasks with different priorities/deadlines, one completed task for Weekly, and one note-task link that affects recommendations.
+- Keep screenshots optional; prioritize a reproducible local demo over static assets.
+- Treat this phase as submission readiness, not a new feature phase.
 
 ## Working Rhythm
 
