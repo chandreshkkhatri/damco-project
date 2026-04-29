@@ -199,14 +199,32 @@ Connect notes and tasks through the existing `NoteTaskLink` join model so linked
 
 ### Goal
 
-Build the core assessment differentiator: a decision engine that recommends the top three next actions.
+Build the core assessment differentiator: a deterministic decision engine that recommends the top three next actions and can optionally enrich the explanation with AI.
 
 ### Scope
 
-- Implement deterministic task scoring.
-- Add an AI service interface with a Gemini provider.
-- Add fallback behavior when no API key is configured.
-- Build the Today page with top three recommendations and reasoning.
+- Add `src/server/recommendations.ts` to rank open tasks and return a recommendation DTO with task details, score, structured reason breakdown, linked note context, explanation text, and explanation source.
+- Score tasks using existing fields only: deadline proximity, priority, status momentum, task freshness, and linked-note recency.
+- Add an AI service boundary under `src/server/ai/` with an injectable Gemini-backed implementation that can turn score signals into short user-facing reasoning.
+- Keep deterministic scoring as the source of truth and use AI only for explanation text, never for ranking.
+- Add fallback behavior when no API key is configured or the provider call fails.
+- Build the Today page at `src/app/page.tsx` to show the top three recommendations, score reasons, and the fallback state when there are fewer than three actionable tasks.
+
+### Expected Files
+
+- New recommendation service: `src/server/recommendations.ts`.
+- New AI boundary: `src/server/ai/provider.ts`, `src/server/ai/gemini.ts`, and `src/server/ai/index.ts`.
+- UI entry point: `src/app/page.tsx`.
+- Possible navigation or metadata touch-up: `src/app/layout.tsx`.
+- Validation: `tests/integration/recommendations.test.ts`.
+
+### Test Strategy
+
+- Test recommendation behavior through the application layer with real Prisma reads and writes, but no live AI calls.
+- Create small fixtures with controlled deadlines, priorities, statuses, and linked notes so ordering is easy to reason about.
+- Mock or stub the AI provider boundary to verify both explanation success and deterministic fallback behavior.
+- Keep the Today page thin and validate it through TypeScript, lint, and production build rather than adding UI test tooling in this phase.
+- Assert both ordering and explanation metadata so the ranking stays explainable during later phases.
 
 ### Integration Tests
 
@@ -214,12 +232,34 @@ Build the core assessment differentiator: a decision engine that recommends the 
 - Verify completed tasks are excluded.
 - Verify linked recent notes can influence ranking.
 - Verify AI failure falls back to deterministic recommendations.
+- Verify the service returns at most the top three actionable recommendations in stable order.
+- Verify AI success can replace deterministic explanation text without changing rank order.
 
 ### Exit Criteria
 
-- Today page can be demoed with seeded or manually entered data.
+- Today page can be demoed from seeded or manually entered data without hidden setup.
 - Recommendation logic is covered without requiring a live AI call.
+- The ranking output is explainable enough to defend in the interview.
 - Phase completion commit is ready after checks pass.
+
+### Implementation Notes
+
+- This phase should avoid schema changes unless a concrete scoring gap appears during implementation.
+- The existing `ActivityEvent` model is out of scope for now; use current task and linked-note fields first.
+- Prefer a simple weighted scoring model that can be read and defended quickly during the demo.
+- Return structured reasons from the recommendation service so the UI and tests can assert the same ranking logic.
+- Keep the root `/` route as the Today view because existing navigation already points there as the overview.
+- Use the initial explainable weights: deadline proximity 40 points, priority 25, status momentum 15, linked-note recency 15, and task update freshness 5.
+- Use a dedicated eager Prisma query for open tasks and linked notes so recommendation composition does not introduce N+1 reads.
+- Keep AI provider and clock injection available in the recommendation service so tests avoid live API calls and date flakiness.
+- Do not add a public recommendation API route unless a later phase needs it; the server-rendered Today page can call the service directly.
+
+### Completion Notes
+
+- The Today page at `/` now renders at most three open-task recommendations with scores, reason chips, linked note context, and explanation source.
+- `src/server/recommendations.ts` ranks open tasks with a deterministic weighted model and excludes `DONE` tasks.
+- `src/server/ai/` contains an injectable explanation provider boundary and fetch-based Gemini provider; missing keys or provider failures fall back to deterministic explanations.
+- Recommendation integration tests cover urgency, completed-task exclusion, linked-note influence, top-three limiting, AI explanation success, and AI fallback.
 
 ## Phase 4: Weekly Query Layer
 

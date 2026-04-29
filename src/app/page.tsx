@@ -1,52 +1,88 @@
 import Link from "next/link";
+import { getRecommendations } from "@/server/recommendations";
 
-const phaseZeroHighlights = [
-  {
-    title: "Health and runtime",
-    body: "The app starts with a smoke-check API route so every later phase can validate the environment quickly."
-  },
-  {
-    title: "Relational foundation",
-    body: "Notes, tasks, links, and activity events are modeled up front so the recommendation flow grows on stable data."
-  },
-  {
-    title: "Regression guardrails",
-    body: "Vitest integration checks are in place from Phase 0, matching the project rule that each phase closes with tests."
-  }
-];
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function TodayPage() {
+  const recommendations = await getRecommendations();
+
   return (
-    <main className="shell">
-      <section className="hero">
-        <span className="eyebrow">Phase 0 Foundation</span>
-        <h1>Turn scattered context into ranked next actions.</h1>
-        <p>
-          This project is a small context-to-action system: capture notes, connect them to tasks,
-          and recommend what to do next with deterministic logic plus AI-assisted explanation.
-        </p>
-        <div className="grid">
-          {phaseZeroHighlights.map((item) => (
-            <article className="card" key={item.title}>
-              <h2>{item.title}</h2>
-              <p>{item.body}</p>
-            </article>
-          ))}
+    <main className="page-shell">
+      <nav className="page-nav" aria-label="Primary navigation">
+        <Link href="/">Today</Link>
+        <Link href="/notes">Notes</Link>
+        <Link href="/tasks">Tasks</Link>
+      </nav>
+      <section className="page-header">
+        <p className="page-kicker">Phase 3 Recommendations</p>
+        <h1>Today</h1>
+        <p>Top next actions ranked from deadlines, priority, task state, freshness, and linked note context.</p>
+      </section>
+      <section className="panel detail-panel">
+        <div className="panel-heading">
+          <h2>Recommended next actions</h2>
+          <p>{recommendations.length === 0 ? "No open tasks are ready for ranking." : `${recommendations.length} recommendation${recommendations.length === 1 ? "" : "s"} ready.`}</p>
         </div>
-        <div className="stack" aria-label="Phase zero stack">
-          <span className="pill">Next.js App Router</span>
-          <span className="pill">TypeScript</span>
-          <span className="pill">Prisma + SQLite</span>
-          <span className="pill">Vitest integration checks</span>
-        </div>
-        <div className="action-row">
-          <Link className="button" href="/notes">
-            Open notes
-          </Link>
-          <Link className="button button-secondary" href="/tasks">
-            Open tasks
-          </Link>
-        </div>
+        {recommendations.length === 0 ? (
+          <div className="empty-state">
+            <p>Create tasks, add deadlines or priorities, and link relevant notes to make the Today view useful.</p>
+            <div className="action-row">
+              <Link className="button" href="/tasks">
+                Add task
+              </Link>
+              <Link className="button button-secondary" href="/notes">
+                Add note
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <ol className="recommendation-list">
+            {recommendations.map((recommendation) => (
+              <li className="recommendation-item" key={recommendation.task.id}>
+                <div className="recommendation-rank" aria-label={`Score ${recommendation.score}`}>
+                  {recommendation.score}
+                </div>
+                <div className="recommendation-body">
+                  <div className="detail-header">
+                    <div>
+                      <p className="entity-title">{recommendation.task.title}</p>
+                      <p className="entity-meta">
+                        {recommendation.task.status.replaceAll("_", " ")} · {recommendation.task.priority}
+                        {recommendation.task.deadline ? ` · due ${new Date(recommendation.task.deadline).toLocaleDateString()}` : ""}
+                      </p>
+                    </div>
+                    <Link className="inline-link" href={`/tasks/${recommendation.task.id}`}>
+                      Open task
+                    </Link>
+                  </div>
+                  <p className="recommendation-explanation">{recommendation.explanation}</p>
+                  <div className="reason-grid" aria-label="Recommendation reasons">
+                    {recommendation.reasons.map((reason) => (
+                      <div className="reason-chip" key={reason.factor}>
+                        <span>{reason.label}</span>
+                        <strong>+{reason.score}</strong>
+                        <small>{reason.detail}</small>
+                      </div>
+                    ))}
+                  </div>
+                  {recommendation.linkedNotes.length > 0 ? (
+                    <div className="linked-context">
+                      <p className="entity-meta">Linked context</p>
+                      <div className="tag-row">
+                        {recommendation.linkedNotes.slice(0, 3).map((note) => (
+                          <span className="pill" key={note.id}>
+                            {note.excerpt || "Untitled note"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="entity-meta">Explanation: {recommendation.explanationSource === "ai" ? "AI-assisted" : "deterministic fallback"}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </main>
   );

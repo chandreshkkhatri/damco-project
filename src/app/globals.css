@@ -330,6 +330,78 @@ a {
   font-size: 0.88rem;
 }
 
+.recommendation-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendation-item {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.recommendation-rank {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 18px;
+  background: rgba(185, 92, 50, 0.1);
+  color: var(--accent);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.recommendation-body {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.recommendation-explanation {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.reason-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.reason-chip {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 252, 247, 0.84);
+}
+
+.reason-chip span,
+.reason-chip strong {
+  font-weight: 800;
+}
+
+.reason-chip small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.linked-context .pill {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .shell {
     padding-top: 1.5rem;
@@ -345,6 +417,10 @@ a {
 
   .hero {
     padding: 1.25rem;
+  }
+
+  .recommendation-item {
+    grid-template-columns: 1fr;
   }
 }
 
