@@ -6,13 +6,14 @@ The product thesis is simple: capturing notes and tasks is not enough. The usefu
 
 ## Current Status
 
-Phase 1 capture is complete:
+Phase 2 linking is complete:
 
 - Root-level Next.js app with TypeScript.
 - Prisma plus SQLite for local development.
 - Note and task capture flows with create, list, detail, and update paths.
 - Basic tag support across notes and tasks.
-- Vitest integration coverage for health, database, notes API, and tasks API.
+- Note-task linking from detail pages using the relational join model.
+- Vitest integration coverage for health, database, notes API, tasks API, and link lifecycle behavior.
 - Production build and lint checks passing for the current slice.
 
 ## Stack
@@ -38,7 +39,7 @@ Phase 1 capture is complete:
 4. Initialize the local database with `npm run db:migrate -- --name init`.
 5. Start the app with `npm run dev`.
 
-The default local database URL is `file:./prisma/dev.db`.
+The default local database URL is `file:./dev.db`, which Prisma stores as `prisma/dev.db` relative to the schema directory.
 
 ## Scripts
 
@@ -59,16 +60,16 @@ The default local database URL is `file:./prisma/dev.db`.
 - `AI_PROVIDER`: future provider selection flag.
 - `NEXT_PUBLIC_APP_NAME`: display name used by the app and health route.
 
-## Phase 1 Exit Criteria
+## Phase 2 Exit Criteria
 
-Phase 1 is complete when:
+Phase 2 is complete when:
 
-- Notes and tasks persist through the application boundary.
-- The capture UI works without manual database edits.
+- Notes and tasks can be linked and unlinked through the application boundary.
+- The detail UI shows linked context without manual database edits.
 - Integration tests, lint, and production build all pass for the slice.
 
 ## Next Phases
 
-The next slices add note-task linking, recommendation ranking, and weekly summaries. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
+The next slices add recommendation ranking and weekly summaries. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
 
 

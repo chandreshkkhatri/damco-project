@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { listNoteLinks, type LinkedTaskDto } from "@/server/links";
 import { NotFoundError } from "@/server/http";
 import { parseStoredTags, serializeTags } from "@/server/tags";
 import { z } from "zod";
@@ -17,6 +18,10 @@ export type NoteDto = {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type NoteDetailDto = NoteDto & {
+  linkedTasks: LinkedTaskDto[];
 };
 
 function toNoteDto(note: {
@@ -60,7 +65,12 @@ export async function listNotes() {
 
 export async function getNote(noteId: string) {
   const note = await requireNote(noteId);
-  return toNoteDto(note);
+  const links = await listNoteLinks(noteId);
+
+  return {
+    ...toNoteDto(note),
+    linkedTasks: links.map((link) => link.task)
+  } satisfies NoteDetailDto;
 }
 
 export async function createNote(input: NoteInput) {

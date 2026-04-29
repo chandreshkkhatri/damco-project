@@ -1,6 +1,7 @@
 "use server";
 
 import { createTask, updateTask } from "@/server/tasks";
+import { linkNoteToTask, unlinkNoteFromTask } from "@/server/links";
 import { parseTagInput } from "@/server/tags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -31,4 +32,19 @@ export async function updateTaskAction(taskId: string, formData: FormData) {
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);
   redirect(`/tasks/${taskId}`);
+}
+
+export async function linkNoteToTaskAction(taskId: string, formData: FormData) {
+  const noteId = formData.get("noteId")?.toString() ?? "";
+  await linkNoteToTask(noteId, { taskId });
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath(`/notes/${noteId}`);
+}
+
+export async function unlinkNoteFromTaskAction(taskId: string, noteId: string) {
+  await unlinkNoteFromTask(noteId, taskId);
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath(`/notes/${noteId}`);
 }

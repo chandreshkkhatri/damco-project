@@ -8,6 +8,13 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 export function toRouteErrorResponse(error: unknown) {
   if (error instanceof ZodError) {
     return NextResponse.json(
@@ -21,6 +28,10 @@ export function toRouteErrorResponse(error: unknown) {
 
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
+  }
+
+  if (error instanceof ConflictError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
   }
 
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });

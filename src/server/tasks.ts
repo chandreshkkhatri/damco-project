@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { listTaskLinks, type LinkedNoteDto } from "@/server/links";
 import { NotFoundError } from "@/server/http";
 import { parseStoredTags, serializeTags } from "@/server/tags";
 import { z } from "zod";
@@ -35,6 +36,10 @@ export type TaskDto = {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+};
+
+export type TaskDetailDto = TaskDto & {
+  linkedNotes: LinkedNoteDto[];
 };
 
 function toTaskDto(task: {
@@ -93,7 +98,12 @@ export async function listTasks() {
 
 export async function getTask(taskId: string) {
   const task = await requireTask(taskId);
-  return toTaskDto(task);
+  const links = await listTaskLinks(taskId);
+
+  return {
+    ...toTaskDto(task),
+    linkedNotes: links.map((link) => link.note)
+  } satisfies TaskDetailDto;
 }
 
 export async function createTask(input: TaskInput) {

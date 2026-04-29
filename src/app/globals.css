@@ -241,6 +241,11 @@ a {
   color: var(--text);
 }
 
+.button-small {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+}
+
 .action-row {
   display: flex;
   flex-wrap: wrap;
@@ -304,6 +309,10 @@ a {
   margin-top: 1.25rem;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.compact-form {
+  max-width: 460px;
 }
 
 .stack {

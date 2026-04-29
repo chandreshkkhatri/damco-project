@@ -1,5 +1,6 @@
-import { updateNoteAction } from "@/app/notes/actions";
+import { linkTaskToNoteAction, unlinkTaskFromNoteAction, updateNoteAction } from "@/app/notes/actions";
 import { getNote } from "@/server/notes";
+import { listTasks } from "@/server/tasks";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -15,7 +16,11 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
   try {
     const { noteId } = await params;
     const note = await getNote(noteId);
+    const tasks = await listTasks();
     const action = updateNoteAction.bind(null, note.id);
+    const linkAction = linkTaskToNoteAction.bind(null, note.id);
+    const linkedTaskIds = new Set(note.linkedTasks.map((task) => task.id));
+    const availableTasks = tasks.filter((task) => !linkedTaskIds.has(task.id));
 
     return (
       <main className="page-shell">
@@ -25,9 +30,9 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
           <Link href="/tasks">Tasks</Link>
         </nav>
         <section className="page-header">
-          <p className="page-kicker">Phase 1 Capture</p>
+          <p className="page-kicker">Phase 2 Linking</p>
           <h1>Edit note</h1>
-          <p>Update the note content and normalized tags. Linking comes in the next phase.</p>
+          <p>Update the note content and connect it to the tasks that can use this context.</p>
         </section>
         <section className="panel detail-panel">
           <div className="detail-header">
@@ -57,6 +62,56 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
               </Link>
             </div>
           </form>
+        </section>
+        <section className="panel detail-panel">
+          <div className="panel-heading">
+            <h2>Linked tasks</h2>
+            <p>{note.linkedTasks.length === 0 ? "No tasks linked yet." : `${note.linkedTasks.length} linked task${note.linkedTasks.length === 1 ? "" : "s"}.`}</p>
+          </div>
+          {note.linkedTasks.length === 0 ? (
+            <p className="empty-state">Link a task to make this note available as decision context.</p>
+          ) : (
+            <ul className="entity-list">
+              {note.linkedTasks.map((task) => {
+                const unlinkAction = unlinkTaskFromNoteAction.bind(null, note.id, task.id);
+
+                return (
+                  <li className="entity-item" key={task.id}>
+                    <div>
+                      <p className="entity-title">{task.title}</p>
+                      <p className="entity-meta">
+                        {task.status.replaceAll("_", " ")} · {task.priority}
+                        {task.deadline ? ` · due ${new Date(task.deadline).toLocaleDateString()}` : ""}
+                      </p>
+                    </div>
+                    <form action={unlinkAction}>
+                      <button className="button button-secondary button-small" type="submit">
+                        Unlink
+                      </button>
+                    </form>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {availableTasks.length > 0 ? (
+            <form action={linkAction} className="form-stack compact-form">
+              <label className="field">
+                <span>Add task link</span>
+                <select name="taskId" required>
+                  <option value="">Choose a task</option>
+                  {availableTasks.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="button" type="submit">
+                Link task
+              </button>
+            </form>
+          ) : null}
         </section>
       </main>
     );
