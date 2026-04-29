@@ -12,6 +12,8 @@ type GeminiResponse = {
   }>;
 };
 
+const explanationTimeoutMs = 5000;
+
 function extractJson(text: string) {
   const match = text.match(/\[[\s\S]*\]/);
   return match?.[0] ?? text;
@@ -51,6 +53,8 @@ export class GeminiRecommendationExplanationProvider implements RecommendationEx
   ) {}
 
   async explainRecommendations(request: RecommendationExplanationRequest) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), explanationTimeoutMs);
     const prompt = [
       "Explain why these tasks are recommended next actions.",
       "Return only a JSON array of objects with taskId and explanation fields.",
@@ -60,6 +64,7 @@ export class GeminiRecommendationExplanationProvider implements RecommendationEx
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json"
       },
@@ -71,6 +76,8 @@ export class GeminiRecommendationExplanationProvider implements RecommendationEx
         ]
       })
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Gemini explanation request failed with ${response.status}.`);

@@ -37,50 +37,56 @@ export default async function TodayPage() {
           </div>
         ) : (
           <ol className="recommendation-list">
-            {recommendations.map((recommendation) => (
-              <li className="recommendation-item" key={recommendation.task.id}>
-                <div className="recommendation-rank" aria-label={`Score ${recommendation.score}`}>
-                  {recommendation.score}
-                </div>
-                <div className="recommendation-body">
-                  <div className="detail-header">
-                    <div>
-                      <p className="entity-title">{recommendation.task.title}</p>
-                      <p className="entity-meta">
-                        {recommendation.task.status.replaceAll("_", " ")} · {recommendation.task.priority}
-                        {recommendation.task.deadline ? ` · due ${new Date(recommendation.task.deadline).toLocaleDateString()}` : ""}
-                      </p>
-                    </div>
-                    <Link className="inline-link" href={`/tasks/${recommendation.task.id}`}>
-                      Open task
-                    </Link>
+            {recommendations.map((recommendation) => {
+              const visibleReasons = recommendation.reasons.filter((reason) => reason.score > 0);
+
+              return (
+                <li className="recommendation-item" key={recommendation.task.id}>
+                  <div className="recommendation-rank" aria-label={`Score ${recommendation.score}`}>
+                    {recommendation.score}
                   </div>
-                  <p className="recommendation-explanation">{recommendation.explanation}</p>
-                  <div className="reason-grid" aria-label="Recommendation reasons">
-                    {recommendation.reasons.map((reason) => (
-                      <div className="reason-chip" key={reason.factor}>
-                        <span>{reason.label}</span>
-                        <strong>+{reason.score}</strong>
-                        <small>{reason.detail}</small>
+                  <div className="recommendation-body">
+                    <div className="detail-header">
+                      <div>
+                        <p className="entity-title">{recommendation.task.title}</p>
+                        <p className="entity-meta">
+                          {recommendation.task.status.replaceAll("_", " ")} · {recommendation.task.priority}
+                          {recommendation.task.deadline ? ` · due ${new Date(recommendation.task.deadline).toLocaleDateString()}` : ""}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                  {recommendation.linkedNotes.length > 0 ? (
-                    <div className="linked-context">
-                      <p className="entity-meta">Linked context</p>
-                      <div className="tag-row">
-                        {recommendation.linkedNotes.slice(0, 3).map((note) => (
-                          <span className="pill" key={note.id}>
-                            {note.excerpt || "Untitled note"}
-                          </span>
+                      <Link className="inline-link" href={`/tasks/${recommendation.task.id}`}>
+                        Open task
+                      </Link>
+                    </div>
+                    <p className="recommendation-explanation">{recommendation.explanation}</p>
+                    {visibleReasons.length > 0 ? (
+                      <div className="reason-grid" aria-label="Recommendation reasons">
+                        {visibleReasons.map((reason) => (
+                          <div className="reason-chip" key={reason.factor}>
+                            <span>{reason.label}</span>
+                            <strong>+{reason.score}</strong>
+                            <small>{reason.detail}</small>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  ) : null}
-                  <p className="entity-meta">Explanation: {recommendation.explanationSource === "ai" ? "AI-assisted" : "deterministic fallback"}</p>
-                </div>
-              </li>
-            ))}
+                    ) : null}
+                    {recommendation.linkedNotes.length > 0 ? (
+                      <div className="linked-context">
+                        <p className="entity-meta">Linked context</p>
+                        <div className="tag-row">
+                          {recommendation.linkedNotes.slice(0, 3).map((note) => (
+                            <span className="pill" key={note.id}>
+                              {note.excerpt || "Untitled note"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    <p className="entity-meta">Explanation: {recommendation.explanationSource === "ai" ? "AI-assisted" : "deterministic fallback"}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>

@@ -46,7 +46,7 @@ The default local database URL is `file:./dev.db`, which Prisma stores as `prism
 
 - `npm run dev`: start the local development server.
 - `npm run build`: create a production build.
-- `npm run lint`: run the Next.js lint checks.
+- `npm run lint`: run the ESLint checks.
 - `npm run test`: prepare the test database and run the integration tests.
 - `npm run test:watch`: prepare the test database and watch the test suite.
 - `npm run db:generate`: regenerate Prisma client.
