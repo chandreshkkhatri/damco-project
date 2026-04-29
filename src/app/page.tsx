@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const phaseZeroHighlights = [
   {
     title: "Health and runtime",
@@ -5,7 +7,7 @@ const phaseZeroHighlights = [
   },
   {
     title: "Relational foundation",
-    body: "Notes, tasks, links, and activity events are modeled up front so the recommendation flow grows on stable data." 
+    body: "Notes, tasks, links, and activity events are modeled up front so the recommendation flow grows on stable data."
   },
   {
     title: "Regression guardrails",
@@ -37,7 +39,16 @@ export default function HomePage() {
           <span className="pill">Prisma + SQLite</span>
           <span className="pill">Vitest integration checks</span>
         </div>
+        <div className="action-row">
+          <Link className="button" href="/notes">
+            Open notes
+          </Link>
+          <Link className="button button-secondary" href="/tasks">
+            Open tasks
+          </Link>
+        </div>
       </section>
     </main>
   );
 }
+

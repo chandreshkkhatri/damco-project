@@ -6,13 +6,14 @@ The product thesis is simple: capturing notes and tasks is not enough. The usefu
 
 ## Current Status
 
-Phase 0 is focused on foundation work:
+Phase 1 capture is complete:
 
 - Root-level Next.js app with TypeScript.
 - Prisma plus SQLite for local development.
-- Vitest integration checks from the start.
-- A smoke-check health route at `/api/health`.
-- Core relational models ready for later phases.
+- Note and task capture flows with create, list, detail, and update paths.
+- Basic tag support across notes and tasks.
+- Vitest integration coverage for health, database, notes API, and tasks API.
+- Production build and lint checks passing for the current slice.
 
 ## Stack
 
@@ -58,17 +59,16 @@ The default local database URL is `file:./prisma/dev.db`.
 - `AI_PROVIDER`: future provider selection flag.
 - `NEXT_PUBLIC_APP_NAME`: display name used by the app and health route.
 
-## Phase 0 Exit Criteria
+## Phase 1 Exit Criteria
 
-Phase 0 is complete when:
+Phase 1 is complete when:
 
-- The repo is runnable from a fresh clone.
-- `/api/health` returns a JSON status payload.
-- The Prisma schema initializes cleanly.
-- The Phase 0 integration tests pass.
+- Notes and tasks persist through the application boundary.
+- The capture UI works without manual database edits.
+- Integration tests, lint, and production build all pass for the slice.
 
 ## Next Phases
 
-The next slices add note capture, task capture, linking, recommendation, and weekly summaries. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
+The next slices add note-task linking, recommendation ranking, and weekly summaries. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
 
 

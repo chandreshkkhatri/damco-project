@@ -103,6 +103,13 @@ Allow the user to capture the two primary entities: notes and tasks.
 - Add basic tags if it does not complicate the schema.
 - Keep UI plain but usable.
 
+### Expected Files
+
+- Services and validation: `src/server/notes.ts`, `src/server/tasks.ts`, shared helpers for tags and API error handling.
+- API boundary: `src/app/api/notes/**` and `src/app/api/tasks/**`.
+- UI: `src/app/notes/**`, `src/app/tasks/**`, plus small shared styling updates.
+- Validation: integration tests covering create/list/detail/update flows for notes and tasks.
+
 ### Integration Tests
 
 - Create and retrieve a note through the application boundary.
@@ -114,6 +121,19 @@ Allow the user to capture the two primary entities: notes and tasks.
 - Notes and tasks are persisted.
 - The UI can demonstrate capture without manual database edits.
 - Phase completion commit is ready after checks pass.
+
+### Implementation Notes
+
+- Keep tags as a normalized comma-separated field in the database for now, while exposing them as arrays at the API boundary.
+- Use Zod validation in the service layer so the same rules back both UI actions and route handlers.
+- Prefer simple server-rendered pages and forms over client-heavy state management in this phase.
+
+### Completion Notes
+
+- Notes and tasks now support create, list, detail, and update flows through shared services, route handlers, and server actions.
+- The capture UI is implemented with server-rendered forms so the phase stays simple and easy to demo.
+- Integration coverage now protects note and task validation plus create/list/detail/update application-boundary behavior.
+- Prisma client initialization is lazy and the capture pages are marked dynamic so tests and production builds do not depend on import-time database environment setup.
 
 ## Phase 2: Linking Layer
 
