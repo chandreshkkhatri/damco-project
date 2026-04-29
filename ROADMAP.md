@@ -379,6 +379,15 @@ Prepare the project for Damco review and the final walkthrough video.
 - Keep screenshots optional; prioritize a reproducible local demo over static assets.
 - Treat this phase as submission readiness, not a new feature phase.
 
+### Completion Notes
+
+- README reviewer guidance now covers setup, architecture, demo flow, QA steps, tradeoffs, and deterministic fallback behavior.
+- `scripts/seed-demo.mjs` plus `npm run db:seed` provide idempotent local demo seeding with notes, tasks, links, weekly evidence, and recommendation-friendly urgency.
+- The seed flow mirrors runtime SQLite path normalization so fresh-clone setup works whether the local database URL uses `file:./dev.db` or an older `file:./prisma/...` form.
+- Seed verification confirms the demo state includes open work, a completed task in the current week, recent notes, and linked context before the script exits successfully.
+- Validation passed for `npm run db:push`, `npm run db:seed` twice, `npm run test`, `npm run lint`, and `CI=1 npm run build`; a refreshed local dev server also returned `200` for `/` and `/weekly` without requiring Gemini.
+- Playwright, screenshots, and new product behavior remained out of scope so the phase stayed focused on submission readiness.
+
 ## Working Rhythm
 
 For each phase:
