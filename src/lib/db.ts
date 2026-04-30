@@ -11,11 +11,10 @@ function getDatabaseUrl() {
     return undefined;
   }
 
-  // Older local setup docs used file:./prisma/dev.db, but Prisma resolves
-  // relative SQLite paths from prisma/schema.prisma, which creates a nested
-  // prisma/prisma/dev.db path and breaks fresh local runs.
-  if (databaseUrl.startsWith("file:./prisma/")) {
-    return `file:./${databaseUrl.slice("file:./prisma/".length)}`;
+  if (databaseUrl.startsWith("file:")) {
+    throw new Error(
+      "SQLite DATABASE_URL values are no longer supported. Use a PostgreSQL connection string for local development, tests, and Vercel deployment."
+    );
   }
 
   return databaseUrl;

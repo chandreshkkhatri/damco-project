@@ -55,19 +55,13 @@ function resolveDatabaseUrl(databaseUrl) {
     throw new Error("DATABASE_URL is required. Copy .env.example to .env or export DATABASE_URL before running db:seed.");
   }
 
-  let normalizedDatabaseUrl = databaseUrl;
-
-  // Keep the seed script aligned with the runtime normalization used by src/lib/db.ts.
-  if (normalizedDatabaseUrl.startsWith("file:./prisma/")) {
-    normalizedDatabaseUrl = `file:./${normalizedDatabaseUrl.slice("file:./prisma/".length)}`;
+  if (databaseUrl.startsWith("file:")) {
+    throw new Error(
+      "SQLite DATABASE_URL values are no longer supported. Use a PostgreSQL connection string before running db:seed."
+    );
   }
 
-  if (normalizedDatabaseUrl.startsWith("file:./")) {
-    const relativePath = normalizedDatabaseUrl.slice("file:./".length);
-    return `file:${path.join(rootDir, "prisma", relativePath)}`;
-  }
-
-  return normalizedDatabaseUrl;
+  return databaseUrl;
 }
 
 function serializeTags(tags) {

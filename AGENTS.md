@@ -13,7 +13,7 @@ This repository is for the Damco Build challenge project: a personal context-to-
 
 - Use TypeScript throughout the application.
 - Prefer a full-stack Next.js app unless a later phase explicitly needs a separate backend service.
-- Use a relational data model with Prisma. Start with SQLite for local speed unless the roadmap phase calls for Postgres.
+- Use a relational data model with Prisma. Prefer PostgreSQL so the same setup stays deployable on Vercel.
 - Use a many-to-many join table for note-task links instead of embedding IDs in either record.
 - Keep Gemini/OpenAI provider code isolated behind an AI service interface.
 - Keep environment variables documented in `.env.example`; never commit real secrets.

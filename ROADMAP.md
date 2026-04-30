@@ -31,7 +31,7 @@ The assessment goal is not to clone Notion or Todoist. The goal is to show clear
 
 - Frontend: Next.js with TypeScript.
 - Backend: Next.js route handlers or server actions for the MVP.
-- Database: Prisma with SQLite for local development; Postgres remains the production migration path.
+- Database: Prisma with PostgreSQL so local development and Vercel deployment use the same schema shape.
 - AI: Gemini API behind a small provider interface.
 - Testing: Vitest for service/API integration tests and Playwright for end-to-end UI flows when the UI stabilizes.
 
@@ -87,7 +87,7 @@ Create the runnable project foundation and lock in conventions before product fe
 ### Implementation Notes
 
 - The project uses a root-level Next.js app instead of a split client/server structure to reduce setup overhead for the assessment.
-- SQLite remains the local default so the project is easy to run from a fresh clone.
+- PostgreSQL is the active default so the app stays deployable on Vercel without a second database path.
 - The full core relational schema is introduced in Phase 0 so later phases can focus on behavior instead of data-model churn.
 
 ## Phase 1: Capture Layer
@@ -192,7 +192,7 @@ Connect notes and tasks through the existing `NoteTaskLink` join model so linked
 - Notes and tasks can now be linked and unlinked through a shared link service, note-owned routes, server actions, and detail-page controls.
 - Note detail reads include linked tasks and task detail reads include linked notes, while list reads stay narrow.
 - Duplicate links return a stable conflict response instead of surfacing a generic database error.
-- Vitest now runs integration files sequentially because the suite shares one SQLite test database.
+- Vitest now runs integration files sequentially because the suite shares one PostgreSQL test schema.
 - Test database preparation now focuses on resetting and pushing the schema; Prisma client generation remains available through `postinstall` and `npm run db:generate`.
 
 ## Phase 3: Recommendation Engine
@@ -352,7 +352,7 @@ Prepare the project for Damco review and the final walkthrough video.
 ### Test Strategy
 
 - Keep existing integration tests as the regression gate for product behavior.
-- Smoke-test the seed script against the local SQLite database after `npm run db:push`.
+- Smoke-test the seed script against the configured PostgreSQL database after `npm run db:migrate:deploy`.
 - Avoid adding Playwright unless there is a clear need and enough time; manual QA plus integration coverage is sufficient for this assessment slice.
 - Do not broaden app features during polish unless a reviewer-facing gap blocks the demo.
 
@@ -383,9 +383,9 @@ Prepare the project for Damco review and the final walkthrough video.
 
 - README reviewer guidance now covers setup, architecture, demo flow, QA steps, tradeoffs, and deterministic fallback behavior.
 - `scripts/seed-demo.mjs` plus `npm run db:seed` provide idempotent local demo seeding with notes, tasks, links, weekly evidence, and recommendation-friendly urgency.
-- The seed flow mirrors runtime SQLite path normalization so fresh-clone setup works whether the local database URL uses `file:./dev.db` or an older `file:./prisma/...` form.
+- The seed flow now validates PostgreSQL URLs so local development and Vercel deployment share the same connection model.
 - Seed verification confirms the demo state includes open work, a completed task in the current week, recent notes, and linked context before the script exits successfully.
-- Validation passed for `npm run db:push`, `npm run db:seed` twice, `npm run test`, `npm run lint`, and `CI=1 npm run build`; a refreshed local dev server also returned `200` for `/` and `/weekly` without requiring Gemini.
+- Validation passed for `npm run db:migrate:deploy`, `npm run db:seed` twice, `npm run test`, `npm run lint`, and `CI=1 npm run build`; a refreshed local dev server also returned `200` for `/` and `/weekly` without requiring Gemini.
 - Playwright, screenshots, and new product behavior remained out of scope so the phase stayed focused on submission readiness.
 
 ### Audit Remediation Notes
@@ -412,5 +412,5 @@ For each phase:
 - Insight: linking context to commitments creates better prioritization signals.
 - Solution: a small system with capture, linking, ranking, and AI-assisted explanation.
 - Architecture: Next.js app, relational model, recommendation service, optional AI provider.
-- Tradeoffs: simple local DB vs production Postgres, heuristic ranking vs LLM reasoning, batch recommendations vs real-time recalculation.
+- Tradeoffs: deployable Postgres setup vs lighter local setup, heuristic ranking vs LLM reasoning, batch recommendations vs real-time recalculation.
 - Failure modes: AI outage, missing data, stale tasks, too much context, weak recommendations.
