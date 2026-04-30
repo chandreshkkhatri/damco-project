@@ -1,5 +1,6 @@
 import { linkTaskToNoteAction, unlinkTaskFromNoteAction, updateNoteAction } from "@/app/notes/actions";
 import { PrimaryNav } from "@/app/primary-nav";
+import { NotFoundError } from "@/server/http";
 import { getNote } from "@/server/notes";
 import { listTasks } from "@/server/tasks";
 import { notFound } from "next/navigation";
@@ -14,8 +15,9 @@ type NoteDetailPageProps = {
 };
 
 export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
+  const { noteId } = await params;
+
   try {
-    const { noteId } = await params;
     const note = await getNote(noteId);
     const tasks = await listTasks();
     const action = updateNoteAction.bind(null, note.id);
@@ -112,7 +114,11 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
         </section>
       </main>
     );
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      notFound();
+    }
+
+    throw error;
   }
 }

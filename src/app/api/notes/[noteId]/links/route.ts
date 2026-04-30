@@ -1,5 +1,5 @@
-import { linkNoteToTask, listNoteLinks } from "@/server/links";
-import { toRouteErrorResponse } from "@/server/http";
+import { linkNoteToTask, listNoteLinks, type NoteTaskLinkInput } from "@/server/links";
+import { parseJsonRequest, toRouteErrorResponse } from "@/server/http";
 import { NextResponse } from "next/server";
 
 type NoteLinksRouteContext = {
@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: NoteLinksRouteContext) {
 export async function POST(request: Request, context: NoteLinksRouteContext) {
   try {
     const { noteId } = await context.params;
-    const payload = await request.json();
+    const payload = await parseJsonRequest<NoteTaskLinkInput>(request);
     const link = await linkNoteToTask(noteId, payload);
 
     return NextResponse.json({ link }, { status: 201 });

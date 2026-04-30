@@ -1,5 +1,5 @@
-import { createTask, listTasks } from "@/server/tasks";
-import { toRouteErrorResponse } from "@/server/http";
+import { createTask, listTasks, type TaskInput } from "@/server/tasks";
+import { parseJsonRequest, toRouteErrorResponse } from "@/server/http";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
+    const payload = await parseJsonRequest<TaskInput>(request);
     const task = await createTask(payload);
 
     return NextResponse.json({ task }, { status: 201 });

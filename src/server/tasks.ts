@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { listTaskLinks, type LinkedNoteDto } from "@/server/links";
 import { NotFoundError } from "@/server/http";
-import { parseStoredTags, serializeTags } from "@/server/tags";
+import { getInternalStoredTags, parseStoredTags, serializeTags } from "@/server/tags";
 import { z } from "zod";
 
 export const taskStatuses = ["TODO", "IN_PROGRESS", "DONE"] as const;
@@ -136,7 +136,7 @@ export async function updateTask(taskId: string, input: TaskInput) {
       deadline: parsedInput.deadline ? new Date(parsedInput.deadline) : null,
       status: parsedInput.status,
       priority: parsedInput.priority,
-      tags: serializeTags(parsedInput.tags),
+      tags: serializeTags([...parsedInput.tags, ...getInternalStoredTags(existingTask.tags)]),
       completedAt: getCompletedAt(parsedInput.status, existingTask.completedAt)
     }
   });

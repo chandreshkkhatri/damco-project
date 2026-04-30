@@ -4,7 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const seedMarker = "[damco-demo-seed]";
+const seedTag = "__damco_seed__";
+const legacySeedMarker = "[damco-demo-seed]";
 const envFiles = [".env", ".env.local", ".env.example"];
 
 function readEnvValue(key) {
@@ -106,18 +107,6 @@ function thisWeekMoment(now, dayOffset, hour) {
   return new Date(now.getTime() - 5 * 60 * 1000);
 }
 
-function withSeedMarker(text) {
-  return `${text}\n\n${seedMarker}`;
-}
-
-function noteBody(text) {
-  return withSeedMarker(text);
-}
-
-function taskDescription(text) {
-  return withSeedMarker(text);
-}
-
 const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL ?? readEnvValue("DATABASE_URL"));
 const prisma = new PrismaClient({
   datasources: {
@@ -132,9 +121,7 @@ async function clearExistingDemoData() {
   const [notes, tasks] = await Promise.all([
     prisma.note.findMany({
       where: {
-        content: {
-          contains: seedMarker
-        }
+        OR: [{ tags: { contains: seedTag } }, { content: { contains: legacySeedMarker } }]
       },
       select: {
         id: true
@@ -142,9 +129,7 @@ async function clearExistingDemoData() {
     }),
     prisma.task.findMany({
       where: {
-        description: {
-          contains: seedMarker
-        }
+        OR: [{ tags: { contains: seedTag } }, { description: { contains: legacySeedMarker } }]
       },
       select: {
         id: true
@@ -206,8 +191,8 @@ async function clearExistingDemoData() {
 async function createSeedNote({ content, createdAt, tags, updatedAt }) {
   const note = await prisma.note.create({
     data: {
-      content: noteBody(content),
-      tags: serializeTags(tags)
+      content,
+      tags: serializeTags([...tags, seedTag])
     }
   });
 
@@ -226,11 +211,11 @@ async function createSeedTask({ completedAt = null, createdAt, deadline = null, 
   const task = await prisma.task.create({
     data: {
       title,
-      description: taskDescription(description),
+      description,
       deadline,
       status,
       priority,
-      tags: serializeTags(tags),
+      tags: serializeTags([...tags, seedTag]),
       completedAt
     }
   });
@@ -379,8 +364,8 @@ async function verifySeededData(now) {
   const [completedThisWeekCount, openTaskCount, recentNoteCount, urgentTask, linkCount] = await Promise.all([
     prisma.task.count({
       where: {
-        description: {
-          contains: seedMarker
+        tags: {
+          contains: seedTag
         },
         status: "DONE",
         completedAt: {
@@ -391,8 +376,8 @@ async function verifySeededData(now) {
     }),
     prisma.task.count({
       where: {
-        description: {
-          contains: seedMarker
+        tags: {
+          contains: seedTag
         },
         status: {
           not: "DONE"
@@ -401,8 +386,8 @@ async function verifySeededData(now) {
     }),
     prisma.note.count({
       where: {
-        content: {
-          contains: seedMarker
+        tags: {
+          contains: seedTag
         },
         updatedAt: {
           gte: weekStart,
@@ -412,8 +397,8 @@ async function verifySeededData(now) {
     }),
     prisma.task.findFirst({
       where: {
-        description: {
-          contains: seedMarker
+        tags: {
+          contains: seedTag
         },
         status: {
           not: "DONE"
@@ -429,8 +414,8 @@ async function verifySeededData(now) {
     prisma.noteTaskLink.count({
       where: {
         task: {
-          description: {
-            contains: seedMarker
+          tags: {
+            contains: seedTag
           }
         }
       }

@@ -388,6 +388,13 @@ Prepare the project for Damco review and the final walkthrough video.
 - Validation passed for `npm run db:push`, `npm run db:seed` twice, `npm run test`, `npm run lint`, and `CI=1 npm run build`; a refreshed local dev server also returned `200` for `/` and `/weekly` without requiring Gemini.
 - Playwright, screenshots, and new product behavior remained out of scope so the phase stayed focused on submission readiness.
 
+### Audit Remediation Notes
+
+- JSON API routes now share malformed-request handling so invalid request bodies return stable `400` responses instead of generic `500`s.
+- Note and task detail pages now translate only `NotFoundError` into `notFound()`, while unexpected runtime failures surface through `src/app/error.tsx`.
+- Demo seeding moved ownership from visible content markers to a hidden internal tag that is filtered out of DTOs and preserved on seeded record updates.
+- Integration coverage now includes malformed JSON error paths, missing note/task detail reads, invalid link payloads, and hidden internal tag behavior.
+
 ## Working Rhythm
 
 For each phase:

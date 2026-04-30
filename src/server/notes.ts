@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { listNoteLinks, type LinkedTaskDto } from "@/server/links";
 import { NotFoundError } from "@/server/http";
-import { parseStoredTags, serializeTags } from "@/server/tags";
+import { getInternalStoredTags, parseStoredTags, serializeTags } from "@/server/tags";
 import { z } from "zod";
 
 export const noteInputSchema = z.object({
@@ -88,13 +88,13 @@ export async function createNote(input: NoteInput) {
 
 export async function updateNote(noteId: string, input: NoteInput) {
   const parsedInput = noteInputSchema.parse(input);
-  await requireNote(noteId);
+  const existingNote = await requireNote(noteId);
 
   const note = await db.note.update({
     where: { id: noteId },
     data: {
       content: parsedInput.content,
-      tags: serializeTags(parsedInput.tags)
+      tags: serializeTags([...parsedInput.tags, ...getInternalStoredTags(existingNote.tags)])
     }
   });
 

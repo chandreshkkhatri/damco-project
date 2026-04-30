@@ -153,4 +153,52 @@ describe("note-task links api", () => {
     expect(response.status).toBe(404);
     expect(payload.error).toBe("Task not found.");
   });
+
+  it("rejects malformed JSON when creating a link", async () => {
+    const note = await createNote({
+      content: "Context ready for linking.",
+      tags: []
+    });
+
+    const response = await linkRoute(
+      new Request(`http://localhost/api/notes/${note.id}/links`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: "{"
+      }),
+      {
+        params: Promise.resolve({ noteId: note.id })
+      },
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("Request body must be valid JSON.");
+  });
+
+  it("rejects an invalid link payload", async () => {
+    const note = await createNote({
+      content: "Another note ready for linking.",
+      tags: []
+    });
+
+    const response = await linkRoute(
+      new Request(`http://localhost/api/notes/${note.id}/links`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ taskId: "" })
+      }),
+      {
+        params: Promise.resolve({ noteId: note.id })
+      },
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("Validation failed");
+  });
 });

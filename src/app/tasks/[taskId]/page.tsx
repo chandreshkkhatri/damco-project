@@ -1,5 +1,6 @@
 import { linkNoteToTaskAction, unlinkNoteFromTaskAction, updateTaskAction } from "@/app/tasks/actions";
 import { PrimaryNav } from "@/app/primary-nav";
+import { NotFoundError } from "@/server/http";
 import { listNotes } from "@/server/notes";
 import { getTask, taskPriorities, taskStatuses } from "@/server/tasks";
 import Link from "next/link";
@@ -14,8 +15,9 @@ type TaskDetailPageProps = {
 };
 
 export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
+  const { taskId } = await params;
+
   try {
-    const { taskId } = await params;
     const task = await getTask(taskId);
     const notes = await listNotes();
     const action = updateTaskAction.bind(null, task.id);
@@ -140,7 +142,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         </section>
       </main>
     );
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      notFound();
+    }
+
+    throw error;
   }
 }

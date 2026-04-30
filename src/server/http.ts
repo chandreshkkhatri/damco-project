@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+export class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
+
 export class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
@@ -15,6 +22,18 @@ export class ConflictError extends Error {
   }
 }
 
+export async function parseJsonRequest<T>(request: Request) {
+  try {
+    return (await request.json()) as T;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new BadRequestError("Request body must be valid JSON.");
+    }
+
+    throw error;
+  }
+}
+
 export function toRouteErrorResponse(error: unknown) {
   if (error instanceof ZodError) {
     return NextResponse.json(
@@ -24,6 +43,10 @@ export function toRouteErrorResponse(error: unknown) {
       },
       { status: 400 },
     );
+  }
+
+  if (error instanceof BadRequestError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   if (error instanceof NotFoundError) {

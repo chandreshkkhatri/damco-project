@@ -16,6 +16,7 @@ Core product slices are implemented and the repo now includes demo seeding for s
 - Today view with top-three deterministic task recommendations and optional Gemini explanation text.
 - Weekly view with deterministic completed-work, carry-forward, recent-note, and theme summaries plus optional Gemini wording.
 - Idempotent demo seed flow for reproducible local walkthroughs.
+- Hidden internal seed ownership so demo detail pages stay clean while reseeding remains reliable.
 - Vitest integration coverage for health, database, notes API, tasks API, link lifecycle behavior, recommendation ranking, and weekly summaries.
 - Production build and lint checks passing for the current slice.
 
@@ -54,7 +55,7 @@ Core product slices are implemented and the repo now includes demo seeding for s
 
 The default local database URL is `file:./dev.db`, which Prisma stores as `prisma/dev.db` relative to the schema directory.
 
-`npm run db:seed` is idempotent. It removes previously seeded demo records and recreates a known walkthrough state.
+`npm run db:seed` is idempotent. It removes previously seeded demo records, including older demo rows that used the legacy visible content marker, and recreates a known walkthrough state.
 
 ## Scripts
 
@@ -105,7 +106,7 @@ Then run `npm run db:push`, `npm run db:seed`, `npm run dev`, and smoke-test the
 
 1. Open `/` and verify the seeded urgent task appears in Today recommendations.
 2. Open `/weekly` and verify the page shows at least one completed task, recent notes, carry-forward work, and themes.
-3. Open a linked task detail page and a linked note detail page from the seeded data and verify the relationship appears on both sides.
+3. Open a linked task detail page and a linked note detail page from the seeded data and verify the relationship appears on both sides without any internal demo marker text in the editable fields.
 4. Leave `GEMINI_API_KEY` empty and verify both `/` and `/weekly` still show deterministic fallback wording.
 5. Optional AI smoke test: set `AI_PROVIDER=gemini` and `GEMINI_API_KEY`, restart the dev server, and verify only recommendation/summary wording changes.
 
@@ -121,18 +122,14 @@ If you want a fuller manual feature regression after the seeded demo pass:
 8. Open the linked task detail page and verify the note appears in linked notes.
 9. Unlink from either detail page and verify the relationship disappears from both sides.
 
-## Phase 4 Exit Criteria
+## Submission Readiness
 
-Phase 4 is complete when:
+The repo is currently in submission-ready shape for the assessment:
 
-- The Weekly page answers what happened this week without manual database edits.
-- Completed tasks, carry-forward open tasks, recent notes, and themes are separated clearly.
-- Older notes and tasks outside the weekly window do not pollute the summary.
-- AI wording failure or missing API keys fall back to deterministic summary text.
-- Integration tests, lint, and production build all pass for the slice.
-
-## Next Phases
-
-The current slice is final submission polish. The detailed phase plan lives in `ROADMAP.md`, and the project operating rules live in `AGENTS.md`.
+- Setup, seed, and QA steps are documented for a fresh reviewer.
+- The demo seed flow is deterministic and keeps internal ownership markers out of the visible UI.
+- Malformed JSON API requests now fail with stable `400` responses instead of generic `500`s.
+- Missing note/task detail reads still render not-found pages, while unexpected runtime failures surface through the app error boundary.
+- The detailed phased plan and implementation history live in `ROADMAP.md`, and the working conventions live in `AGENTS.md`.
 
 

@@ -1,5 +1,5 @@
-import { getTask, updateTask } from "@/server/tasks";
-import { toRouteErrorResponse } from "@/server/http";
+import { getTask, updateTask, type TaskInput } from "@/server/tasks";
+import { parseJsonRequest, toRouteErrorResponse } from "@/server/http";
 import { NextResponse } from "next/server";
 
 type TaskRouteContext = {
@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: TaskRouteContext) {
 export async function PUT(request: Request, context: TaskRouteContext) {
   try {
     const { taskId } = await context.params;
-    const payload = await request.json();
+    const payload = await parseJsonRequest<TaskInput>(request);
     const task = await updateTask(taskId, payload);
 
     return NextResponse.json({ task });

@@ -1,13 +1,25 @@
+export const demoSeedTag = "__damco_seed__";
+
+const hiddenTags = new Set([demoSeedTag]);
+
 export function normalizeTags(tags: string[]) {
   return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
 }
 
-export function parseStoredTags(tags: string | null) {
+function splitStoredTags(tags: string | null) {
   if (!tags) {
     return [];
   }
 
   return normalizeTags(tags.split(","));
+}
+
+export function parseStoredTags(tags: string | null) {
+  return splitStoredTags(tags).filter((tag) => !hiddenTags.has(tag));
+}
+
+export function getInternalStoredTags(tags: string | null) {
+  return splitStoredTags(tags).filter((tag) => hiddenTags.has(tag));
 }
 
 export function serializeTags(tags: string[]) {

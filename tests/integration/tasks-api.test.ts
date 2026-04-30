@@ -86,4 +86,66 @@ describe("tasks api", () => {
     expect(response.status).toBe(400);
     expect(payload.error).toBe("Validation failed");
   });
+
+  it("returns not found for a missing task detail read", async () => {
+    const response = await getTaskRoute(new Request("http://localhost/api/tasks/missing-task"), {
+      params: Promise.resolve({ taskId: "missing-task" })
+    });
+    const payload = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(payload.error).toBe("Task not found.");
+  });
+
+  it("rejects malformed JSON", async () => {
+    const response = await createTaskRoute(
+      new Request("http://localhost/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: "{"
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("Request body must be valid JSON.");
+  });
+
+  it("rejects malformed JSON when updating a task", async () => {
+    const createResponse = await createTaskRoute(
+      new Request("http://localhost/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: "A task ready for update",
+          description: null,
+          deadline: null,
+          status: "TODO",
+          priority: "MEDIUM",
+          tags: []
+        })
+      }),
+    );
+    const createdPayload = await createResponse.json();
+    const response = await updateTaskRoute(
+      new Request(`http://localhost/api/tasks/${createdPayload.task.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: "{"
+      }),
+      {
+        params: Promise.resolve({ taskId: createdPayload.task.id })
+      },
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe("Request body must be valid JSON.");
+  });
 });
