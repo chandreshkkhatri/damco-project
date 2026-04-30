@@ -137,9 +137,12 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] Confirm unexpected runtime errors are not converted into fake not-found responses.
 - [ ] Confirm the app-level error boundary in `src/app/error.tsx` is present for unexpected page failures.
 
-## 12. Documentation And Demo Script
+## 12. Documentation And Demo Prep
 
 - [ ] Follow the README setup flow exactly from a clean local database.
+- [ ] Confirm README explains the problem interpretation, chosen approach, stack rationale, tradeoffs, future improvements, and live-demo posture.
+- [ ] Confirm README includes a readable system architecture diagram.
+- [ ] Confirm `ARCHITECTURE.md` explains systems involved, runtime flows, data model, AI boundary, deployment topology, and whether the app listens to events.
 - [ ] Confirm README Demo Flow matches the actual seeded app behavior.
 - [ ] Confirm README Tradeoffs and Failure Modes are still accurate.
 - [ ] Confirm ROADMAP completion notes match the current implementation.

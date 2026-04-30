@@ -4,6 +4,27 @@ A small personal knowledge and task system for the Damco build challenge.
 
 The product thesis is simple: capturing notes and tasks is not enough. The useful behavior is deciding what to do next, using the context inside recent notes, deadlines, and task state.
 
+## Challenge Interpretation
+
+I interpreted the assessment as a systems-design exercise, not just a CRUD app exercise. The useful product question is: how can scattered personal context become trustworthy next actions without giving an LLM silent control over the user's data?
+
+The chosen approach is a small context-to-action loop:
+
+1. Capture notes and tasks as separate durable records.
+2. Link notes to tasks through a relational join model so context can support more than one commitment.
+3. Rank open tasks deterministically using deadlines, priority, status, freshness, and linked context.
+4. Use AI only as an enhancement layer for wording or reviewable suggestions.
+5. Require explicit approval before any AI-assisted suggestion changes notes, tasks, links, or tags.
+
+That keeps the demo narrow enough to finish well, but rich enough to discuss product tradeoffs, data modeling, AI failure modes, deployment, and future ingestion systems such as Gmail.
+
+## Reviewer Map
+
+- [Architecture](ARCHITECTURE.md): system diagrams, data model, runtime flows, AI boundary, event behavior, deployment shape, and interview-ready answers.
+- [Roadmap](ROADMAP.md): phase-by-phase implementation plan, test strategy, and completion notes.
+- [QA Checklist](QA_CHECKLIST.md): manual and automated pre-submission checks.
+- [Product Audit](PRODUCT_AUDIT.md): product critique, demo risks, future increments, and likely reviewer questions.
+
 ## Current Status
 
 Core product slices are implemented and the repo now includes demo seeding for submission prep:
@@ -29,6 +50,15 @@ Core product slices are implemented and the repo now includes demo seeding for s
 - PostgreSQL
 - Vitest for integration testing
 
+### Why This Stack
+
+- Next.js keeps the UI, server actions, and route handlers in one deployable unit, which is appropriate for an assessment-sized product.
+- TypeScript makes the service boundaries and DTO shapes explicit enough to discuss during review.
+- Prisma gives a readable relational schema and migration workflow without spending the assessment on database plumbing.
+- PostgreSQL keeps local development, tests, Neon, and Vercel deployment on the same database model.
+- Vitest integration tests exercise the service/API behavior without requiring a browser automation stack for every phase.
+- Gemini is isolated behind a provider interface because AI is optional and should not own core ranking or writes.
+
 ## Domain Model
 
 - `Note`: captured context in markdown-friendly text.
@@ -46,6 +76,28 @@ Core product slices are implemented and the repo now includes demo seeding for s
 - `src/server/assist.ts`: suggested-action queue for links, tags, notes, and tasks with explicit approval before writes.
 - `src/server/ai/**`: small Gemini boundary so AI can enhance wording and propose actions without owning core decisions.
 - `src/lib/db.ts`: lazy Prisma client setup with PostgreSQL connection validation.
+
+```mermaid
+flowchart LR
+   user[User in browser]
+   app[Next.js app\nPages, server actions, API routes]
+   services[Service layer\nNotes, Tasks, Links, Today, Weekly, Assist]
+   prisma[Prisma Client]
+   db[(PostgreSQL\nlocal or Neon)]
+   gemini[Gemini API\noptional]
+   source[Manual email/message text\nfuture Gmail precursor]
+
+   user --> app
+   app --> services
+   services --> prisma
+   prisma --> db
+   services -. optional wording and suggestions .-> gemini
+   source --> app
+```
+
+The app is request/response driven today. It does not listen to external event streams, webhooks, queues, Gmail push notifications, or background sync events. `ActivityEvent` exists as a future schema hook, but current workflows compute views on demand from persisted notes, tasks, links, and suggested actions.
+
+For the deeper systems view, including sequence diagrams and data-model diagrams, see [Architecture](ARCHITECTURE.md).
 
 ## Getting Started
 
@@ -97,6 +149,17 @@ The example `.env.example` uses a local PostgreSQL URL. For Neon, use the pooled
 7. Explain that the product still works without Gemini because deterministic ranking, weekly grouping, and assist fallbacks remain available.
 8. If a Gemini key is available, refresh `/`, `/weekly`, or generate assist suggestions and point out that AI proposes wording or actions while deterministic services still own validation and writes.
 
+## Live Demo Posture
+
+The project is Vercel-ready and intended to be deployed with Neon PostgreSQL for review. The repository includes `vercel.json`, a Vercel-safe build command, PostgreSQL migrations, seed data, and environment-variable documentation.
+
+For submission, provide reviewers with:
+
+- The Vercel URL.
+- The GitHub repository URL.
+- A note that Gemini is optional; the app remains usable without `GEMINI_API_KEY`.
+- A short reminder that demo data can be recreated with `npm run db:seed` if the hosted database is reset.
+
 ## Vercel Deployment
 
 1. Provision a Neon PostgreSQL database.
@@ -124,6 +187,27 @@ For Neon specifically, keeping `DATABASE_URL` pooled and `DIRECT_URL` direct avo
 - The assist flow reduces manual organization work, but it still requires one approval per suggestion; that is slower than automation and safer for an assessment demo.
 - Manual email-text import demonstrates the Gmail direction without adding OAuth token storage or mailbox permissions yet.
 - Weekly summaries use local server time for the Monday-to-now window, which is acceptable for the demo but would need explicit user timezone handling in a production version.
+- There is no authentication or multi-user ownership model yet, so this should be presented as a personal single-user MVP.
+- There is no background worker or queue; all suggestions and summaries are generated by explicit user requests.
+
+## Future Improvements
+
+Given two more weeks, the next increments would be:
+
+1. Add a read-only Gmail connector that feeds imported messages into the existing `SuggestedAction` approval queue.
+2. Add authentication and per-user ownership before any real mailbox or personal-data deployment.
+3. Add search and filters across notes, tasks, tags, linked status, and suggestion source.
+4. Promote `ActivityEvent` into a real event log written by note/task/link/suggestion workflows.
+5. Add background ingestion with a small job queue only after the approval-queue safety model is stable.
+6. Add timezone-aware weekly summaries and richer inline form validation.
+
+The key future-design constraint is that external data sources should propose actions, not silently create or modify user records.
+
+## Iteration And Commit History
+
+The project was built in focused phases: foundation, capture, linking, recommendations, weekly summary, submission polish, deployment readiness, and AI Assist approval queue. The intended commit style is small, reviewable commits such as `feat: add recommendation engine` or `fix: move neon migrations out of vercel build`.
+
+Before final submission, the latest documentation and Assist changes should be committed as one coherent documentation/product slice or split into one feature commit plus one docs commit, depending on how much review granularity is desired.
 
 ## QA Directions
 
