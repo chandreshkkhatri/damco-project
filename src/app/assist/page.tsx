@@ -1,9 +1,3 @@
-import {
-  approveSuggestedActionAction,
-  dismissSuggestedActionAction,
-  generateAssistSuggestionsAction,
-  importSourceForSuggestionsAction,
-} from "@/app/assist/actions";
 import { PrimaryNav } from "@/app/primary-nav";
 import {
   getAssistContextCounts,
@@ -12,6 +6,20 @@ import {
 } from "@/server/assist";
 
 export const dynamic = "force-dynamic";
+
+type AssistPageProps = {
+  searchParams?:
+    | Promise<{
+        count?: string;
+        error?: string;
+        status?: string;
+      }>
+    | {
+        count?: string;
+        error?: string;
+        status?: string;
+      };
+};
 
 const actionLabels: Record<SuggestedActionDto["actionType"], string> = {
   LINK_NOTE_TASK: "Link",
@@ -65,12 +73,12 @@ function SuggestedActionItem({ action }: { action: SuggestedActionDto }) {
       </div>
       {action.status === "PENDING" ? (
         <div className="action-row">
-          <form action={approveSuggestedActionAction.bind(null, action.id)}>
+          <form action={`/api/assist/${action.id}/approve`} method="post">
             <button className="button button-small" type="submit">
               Approve
             </button>
           </form>
-          <form action={dismissSuggestedActionAction.bind(null, action.id)}>
+          <form action={`/api/assist/${action.id}/dismiss`} method="post">
             <button
               className="button button-secondary button-small"
               type="submit"
@@ -84,7 +92,62 @@ function SuggestedActionItem({ action }: { action: SuggestedActionDto }) {
   );
 }
 
-export default async function AssistPage() {
+function assistFlashMessage(
+  status: string | undefined,
+  error: string | undefined,
+  count: string | undefined,
+) {
+  if (error) {
+    return {
+      tone: "error",
+      text: "Assist action failed. Reload the page and try again.",
+    } as const;
+  }
+
+  if (status === "generated") {
+    const total = Number(count ?? "0");
+
+    return {
+      tone: "success",
+      text: `Generated ${total} suggestion${total === 1 ? "" : "s"} from current context.`,
+    } as const;
+  }
+
+  if (status === "imported") {
+    const total = Number(count ?? "0");
+
+    return {
+      tone: "success",
+      text: `Drafted ${total} suggestion${total === 1 ? "" : "s"} from imported source text.`,
+    } as const;
+  }
+
+  if (status === "approved") {
+    return {
+      tone: "success",
+      text: "Suggestion approved and applied.",
+    } as const;
+  }
+
+  if (status === "dismissed") {
+    return {
+      tone: "success",
+      text: "Suggestion dismissed.",
+    } as const;
+  }
+
+  if (status === "no-suggestions") {
+    return {
+      tone: "info",
+      text: "No new suggestions were generated from the current input.",
+    } as const;
+  }
+
+  return null;
+}
+
+export default async function AssistPage({ searchParams }: AssistPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
   const [actions, contextCounts] = await Promise.all([
     listSuggestedActions(),
     getAssistContextCounts(),
@@ -96,6 +159,11 @@ export default async function AssistPage() {
     .filter((action) => action.status !== "PENDING")
     .slice(0, 6);
   const hasContext = contextCounts.noteCount > 0 || contextCounts.taskCount > 0;
+  const flash = assistFlashMessage(
+    resolvedSearchParams.status,
+    resolvedSearchParams.error,
+    resolvedSearchParams.count,
+  );
 
   return (
     <main className="page-shell">
@@ -108,6 +176,15 @@ export default async function AssistPage() {
           before anything changes in the system.
         </p>
       </section>
+      {flash ? (
+        <section className="panel">
+          <p
+            className={flash.tone === "error" ? "entity-title" : "entity-meta"}
+          >
+            {flash.text}
+          </p>
+        </section>
+      ) : null}
       <div className="capture-grid">
         <section className="panel">
           <div className="panel-heading">
@@ -118,7 +195,11 @@ export default async function AssistPage() {
                 : "There are no notes or tasks yet. Create some records first or use Import source text below to draft suggestions from pasted content."}
             </p>
           </div>
-          <form action={generateAssistSuggestionsAction} className="form-stack">
+          <form
+            action="/api/assist/generate"
+            className="form-stack"
+            method="post"
+          >
             <button className="button" disabled={!hasContext} type="submit">
               Scan current context
             </button>
@@ -133,8 +214,9 @@ export default async function AssistPage() {
             </p>
           </div>
           <form
-            action={importSourceForSuggestionsAction}
+            action="/api/assist/import"
             className="form-stack"
+            method="post"
           >
             <label className="field">
               <span>Email or message text</span>
