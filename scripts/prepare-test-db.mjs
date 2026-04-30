@@ -3,8 +3,16 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const prismaCommand = path.join(rootDir, "node_modules", ".bin", process.platform === "win32" ? "prisma.cmd" : "prisma");
+const rootDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const prismaCommand = path.join(
+  rootDir,
+  "node_modules",
+  ".bin",
+  process.platform === "win32" ? "prisma.cmd" : "prisma",
+);
 const envFiles = [".env", ".env.local", ".env.example"];
 const testSchema = "test";
 
@@ -39,7 +47,10 @@ function readEnvValue(key) {
 
       let value = trimmedLine.slice(separatorIndex + 1).trim();
 
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
 
@@ -59,13 +70,13 @@ function getDatabaseUrl() {
 
   if (!databaseUrl) {
     throw new Error(
-      "DATABASE_URL or TEST_DATABASE_URL is required. Copy .env.example to .env and point it at PostgreSQL before running tests."
+      "DATABASE_URL or TEST_DATABASE_URL is required. Copy .env.example to .env and point it at PostgreSQL before running tests.",
     );
   }
 
   if (databaseUrl.startsWith("file:")) {
     throw new Error(
-      "SQLite DATABASE_URL values are no longer supported. Use a PostgreSQL connection string for local development, tests, and Vercel deployment."
+      "SQLite DATABASE_URL values are no longer supported. Use a PostgreSQL connection string for local development, tests, and Vercel deployment.",
     );
   }
 
@@ -82,11 +93,16 @@ function withSchema(databaseUrl, schema) {
 
 const databaseUrl = withSchema(getDatabaseUrl(), testSchema);
 
-execFileSync(prismaCommand, ["db", "push", "--force-reset", "--skip-generate"], {
-  cwd: rootDir,
-  env: {
-    ...process.env,
-    DATABASE_URL: databaseUrl
+execFileSync(
+  prismaCommand,
+  ["db", "push", "--force-reset", "--skip-generate"],
+  {
+    cwd: rootDir,
+    env: {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+      DIRECT_URL: databaseUrl,
+    },
+    stdio: "inherit",
   },
-  stdio: "inherit"
-});
+);

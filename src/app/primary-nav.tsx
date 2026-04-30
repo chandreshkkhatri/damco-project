@@ -7,6 +7,7 @@ export function PrimaryNav() {
       <Link href="/weekly">Weekly</Link>
       <Link href="/notes">Notes</Link>
       <Link href="/tasks">Tasks</Link>
+      <Link href="/assist">Assist</Link>
     </nav>
   );
 }

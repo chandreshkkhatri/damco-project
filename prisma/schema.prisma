@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -53,4 +53,20 @@ model ActivityEvent {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model SuggestedAction {
+  id            String    @id @default(cuid())
+  actionType    String
+  status        String    @default("PENDING")
+  title         String
+  rationale     String
+  payload       String
+  sourceType    String?
+  sourceExcerpt String?
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
+
+  @@index([status, createdAt])
+  @@index([actionType])
 }

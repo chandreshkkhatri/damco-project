@@ -395,6 +395,61 @@ Prepare the project for Damco review and the final walkthrough video.
 - Demo seeding moved ownership from visible content markers to a hidden internal tag that is filtered out of DTOs and preserved on seeded record updates.
 - Integration coverage now includes malformed JSON error paths, missing note/task detail reads, invalid link payloads, and hidden internal tag behavior.
 
+## Phase 6: AI Assist Approval Queue
+
+### Goal
+
+Reduce the manual work of organizing notes, linking them to tasks, and extracting follow-up work while keeping the user in control of every database change.
+
+### Scope
+
+- Add a persistent suggested-action queue with pending, approved, and dismissed states.
+- Generate suggestions from existing notes and tasks, including note-task link suggestions and lightweight tag organization suggestions.
+- Add a manual source-import flow where pasted email or message text can produce draft note/task suggestions without adding Gmail OAuth yet.
+- Add a Gemini provider method for structured suggested actions, with deterministic fallback when Gemini is unavailable or returns invalid output.
+- Add an `/assist` page where the user can generate suggestions, inspect rationale and source evidence, and explicitly approve or dismiss each action.
+- Apply approved actions through the existing note, task, and link services so validation and hidden internal tag preservation remain centralized.
+
+### Out of Scope
+
+- Live Gmail OAuth, background sync jobs, token storage, and mailbox permissions.
+- Automatic writes without approval.
+- Full project hierarchy or graph visualization.
+- Broad agentic planning behavior beyond the concrete suggested actions in this phase.
+
+### Expected Files
+
+- Prisma: `SuggestedAction` model and migration.
+- Services: `src/server/assist.ts` plus AI provider type updates.
+- UI: `src/app/assist/page.tsx`, `src/app/assist/actions.ts`, and primary navigation update.
+- Tests: `tests/integration/assist.test.ts`.
+- Docs: README, QA checklist, and product audit notes for the approval-queue workflow.
+
+### Test Strategy
+
+- Test deterministic generation without a live Gemini call.
+- Test provider-backed suggestions with an injected fake provider.
+- Test approval creates links, notes, tasks, and tag updates through the same application-layer service paths used by the UI.
+- Test dismissal records a decision without mutating notes or tasks.
+- Keep the manual email import deterministic and source-backed so it demonstrates the future Gmail direction without OAuth risk.
+
+### Exit Criteria
+
+- `/assist` is usable with or without `GEMINI_API_KEY`.
+- The system never mutates notes/tasks/links until the user approves a pending suggestion.
+- Approved suggestions are marked approved and dismissed suggestions are marked dismissed.
+- Suggested links skip existing links and missing entities safely.
+- Tests cover generation, approval, dismissal, and fallback behavior.
+
+### Completion Notes
+
+- `SuggestedAction` now persists AI or deterministic proposals with pending, approved, and dismissed states.
+- `src/server/assist.ts` generates suggestions from existing context or pasted source text, validates provider output, deduplicates pending actions, and applies approved actions through existing note, task, and link services.
+- The Gemini boundary can now propose structured assist actions, while missing keys, provider failures, or invalid output fall back to deterministic local suggestions.
+- `/assist` lets the user scan current context, paste email/message text, approve suggestions, and dismiss suggestions without automatic writes.
+- Integration coverage now protects deterministic generation, provider-backed suggestions, provider fallback, approval, dismissal, manual email import, tag updates, and duplicate prevention.
+- Test database preparation now sets both `DATABASE_URL` and `DIRECT_URL` to the test schema so Prisma `directUrl` does not push schemas into `public` during tests.
+
 ## Working Rhythm
 
 For each phase:

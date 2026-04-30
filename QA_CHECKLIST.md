@@ -31,6 +31,7 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] `/weekly`
 - [ ] `/notes`
 - [ ] `/tasks`
+- [ ] `/assist`
 - [ ] One seeded note detail page at `/notes/{noteId}`
 - [ ] One seeded task detail page at `/tasks/{taskId}`
 - [ ] `/api/health`
@@ -90,7 +91,20 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] Confirm deterministic fallback explanation appears when `GEMINI_API_KEY` is empty.
 - [ ] If Gemini is configured, confirm AI wording can replace the explanation without changing task order.
 
-## 8. Weekly Summary
+## 8. Assist Approval Queue
+
+- [ ] Open `/assist` and confirm pending suggestions are empty or shown with rationale, payload summary, and source evidence.
+- [ ] Click `Scan current context` and confirm suggestions appear without immediately changing note/task/link data.
+- [ ] Approve a link suggestion and confirm the note-task relationship appears on both detail pages.
+- [ ] Approve a tag suggestion and confirm the target note or task gains the suggested tag only after approval.
+- [ ] Dismiss a suggestion and confirm it leaves the pending queue without changing notes, tasks, or links.
+- [ ] Paste an email-like message into `Import source text` and confirm it creates pending note/task suggestions.
+- [ ] Approve a drafted note from imported source text and confirm it appears in `/notes` with an `inbox` tag.
+- [ ] Approve a drafted task from imported source text and confirm it appears in `/tasks` with `TODO` status and `MEDIUM` priority.
+- [ ] Leave `GEMINI_API_KEY` empty and confirm assist suggestions still work through deterministic fallback.
+- [ ] If Gemini is configured, confirm AI-generated assist suggestions still require explicit approval before any write.
+
+## 9. Weekly Summary
 
 - [ ] Confirm `/weekly` shows a Monday-to-now summary period.
 - [ ] Confirm the current-week completed seeded task appears under completed work.
@@ -101,15 +115,18 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] Confirm weekly summary text is useful without Gemini.
 - [ ] If Gemini is configured, confirm only the summary wording changes while evidence groups stay the same.
 
-## 9. AI Fallback And Failure Modes
+## 10. AI Fallback And Failure Modes
 
 - [ ] Leave `GEMINI_API_KEY` empty and confirm `/` renders deterministic recommendation explanations.
 - [ ] Leave `GEMINI_API_KEY` empty and confirm `/weekly` renders deterministic summary wording.
+- [ ] Leave `GEMINI_API_KEY` empty and confirm `/assist` can still generate local suggestions.
 - [ ] Set an invalid Gemini key and confirm `/` still renders without crashing.
 - [ ] Set an invalid Gemini key and confirm `/weekly` still renders without crashing.
+- [ ] Set an invalid Gemini key and confirm `/assist` falls back without crashing.
 - [ ] Confirm AI-assisted text never changes ranking order or weekly evidence groups.
+- [ ] Confirm AI-assisted suggestions never mutate records before explicit user approval.
 
-## 10. API Boundary And Error Handling
+## 11. API Boundary And Error Handling
 
 - [ ] Send malformed JSON to `POST /api/notes` and confirm `400` with `Request body must be valid JSON.`
 - [ ] Send malformed JSON to `PUT /api/notes/{noteId}` and confirm `400`.
@@ -120,7 +137,7 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] Confirm unexpected runtime errors are not converted into fake not-found responses.
 - [ ] Confirm the app-level error boundary in `src/app/error.tsx` is present for unexpected page failures.
 
-## 11. Documentation And Demo Script
+## 12. Documentation And Demo Script
 
 - [ ] Follow the README setup flow exactly from a clean local database.
 - [ ] Confirm README Demo Flow matches the actual seeded app behavior.
@@ -128,11 +145,12 @@ Start the app with `npm run dev`, then verify these routes return `200` and rend
 - [ ] Confirm ROADMAP completion notes match the current implementation.
 - [ ] Rehearse the final story in 5-7 minutes: problem, capture, linking, Today, Weekly, AI fallback, architecture, tradeoffs.
 
-## 12. Product Acceptance Criteria
+## 13. Product Acceptance Criteria
 
 - [ ] The app works without Gemini access.
 - [ ] The demo can be reset without manual database edits.
 - [ ] A reviewer can understand why a task is recommended.
 - [ ] Linked notes visibly improve the recommendation story.
 - [ ] Weekly summary answers what happened this week from real persisted data.
+- [ ] AI assist reduces manual organization work while preserving approval before writes.
 - [ ] The project remains small and defensible rather than becoming a broad productivity suite.

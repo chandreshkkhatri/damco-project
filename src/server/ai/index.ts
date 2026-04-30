@@ -1,5 +1,9 @@
 import { GeminiRecommendationExplanationProvider } from "@/server/ai/gemini";
-import type { RecommendationExplanationProvider, WeeklySummaryProvider } from "@/server/ai/provider";
+import type {
+  AssistSuggestionProvider,
+  RecommendationExplanationProvider,
+  WeeklySummaryProvider,
+} from "@/server/ai/provider";
 
 function getGeminiApiKey() {
   if (process.env.AI_PROVIDER && process.env.AI_PROVIDER !== "gemini") {
@@ -29,4 +33,18 @@ export function getWeeklySummaryProvider(): WeeklySummaryProvider | null {
   return new GeminiRecommendationExplanationProvider(apiKey);
 }
 
-export type { RecommendationExplanationProvider, WeeklySummaryProvider } from "@/server/ai/provider";
+export function getAssistSuggestionProvider(): AssistSuggestionProvider | null {
+  const apiKey = getGeminiApiKey();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  return new GeminiRecommendationExplanationProvider(apiKey);
+}
+
+export type {
+  AssistSuggestionProvider,
+  RecommendationExplanationProvider,
+  WeeklySummaryProvider,
+} from "@/server/ai/provider";
