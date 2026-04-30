@@ -5,7 +5,11 @@ import {
   importSourceForSuggestionsAction,
 } from "@/app/assist/actions";
 import { PrimaryNav } from "@/app/primary-nav";
-import { listSuggestedActions, type SuggestedActionDto } from "@/server/assist";
+import {
+  getAssistContextCounts,
+  listSuggestedActions,
+  type SuggestedActionDto,
+} from "@/server/assist";
 
 export const dynamic = "force-dynamic";
 
@@ -81,13 +85,17 @@ function SuggestedActionItem({ action }: { action: SuggestedActionDto }) {
 }
 
 export default async function AssistPage() {
-  const actions = await listSuggestedActions();
+  const [actions, contextCounts] = await Promise.all([
+    listSuggestedActions(),
+    getAssistContextCounts(),
+  ]);
   const pendingActions = actions.filter(
     (action) => action.status === "PENDING",
   );
   const decidedActions = actions
     .filter((action) => action.status !== "PENDING")
     .slice(0, 6);
+  const hasContext = contextCounts.noteCount > 0 || contextCounts.taskCount > 0;
 
   return (
     <main className="page-shell">
@@ -105,12 +113,13 @@ export default async function AssistPage() {
           <div className="panel-heading">
             <h2>Generate suggestions</h2>
             <p>
-              Scan current notes and tasks for likely links and organization
-              tags.
+              {hasContext
+                ? `Scan ${contextCounts.noteCount} note${contextCounts.noteCount === 1 ? "" : "s"} and ${contextCounts.taskCount} task${contextCounts.taskCount === 1 ? "" : "s"} for likely links and organization tags.`
+                : "There are no notes or tasks yet. Create some records first or use Import source text below to draft suggestions from pasted content."}
             </p>
           </div>
           <form action={generateAssistSuggestionsAction} className="form-stack">
-            <button className="button" type="submit">
+            <button className="button" disabled={!hasContext} type="submit">
               Scan current context
             </button>
           </form>

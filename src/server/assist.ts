@@ -78,6 +78,11 @@ export type SuggestedActionDto = {
   decidedAt: string | null;
 };
 
+export type AssistContextCounts = {
+  noteCount: number;
+  taskCount: number;
+};
+
 export type GenerateSuggestedActionsOptions = {
   provider?: AssistSuggestionProvider | null;
   sourceText?: string | null;
@@ -208,6 +213,15 @@ async function getAssistContext() {
   ]);
 
   return { notes, tasks };
+}
+
+export async function getAssistContextCounts(): Promise<AssistContextCounts> {
+  const [noteCount, taskCount] = await Promise.all([
+    db.note.count(),
+    db.task.count(),
+  ]);
+
+  return { noteCount, taskCount };
 }
 
 function sourceDrafts(
