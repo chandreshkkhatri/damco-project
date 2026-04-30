@@ -49,12 +49,13 @@ Core product slices are implemented and the repo now includes demo seeding for s
 1. Copy `.env.example` to `.env`.
 2. Install dependencies with `npm install`.
 3. Point `DATABASE_URL` at a PostgreSQL database that local development and Vercel can reach.
-4. Generate Prisma client with `npm run db:generate`.
-5. Apply checked-in migrations with `npm run db:migrate:deploy`.
-6. Load demo data with `npm run db:seed`.
-7. Start the app with `npm run dev`.
+4. If you use Neon or another provider that offers separate pooled and direct URLs, set `DIRECT_URL` to the direct non-pooled connection string for Prisma migrations.
+5. Generate Prisma client with `npm run db:generate`.
+6. Apply checked-in migrations with `npm run db:migrate:deploy`.
+7. Load demo data with `npm run db:seed`.
+8. Start the app with `npm run dev`.
 
-The example `.env.example` uses a local PostgreSQL URL. If you prefer a hosted database for both local work and deployment, Neon and Vercel Postgres are both compatible with the same `DATABASE_URL` shape.
+The example `.env.example` uses a local PostgreSQL URL. For Neon, use the pooled connection string as `DATABASE_URL` and the direct non-pooled connection string as `DIRECT_URL` so runtime traffic and migrations each use the right connection type.
 
 `npm run db:seed` is idempotent. It removes previously seeded demo records, including older demo rows that used the legacy visible content marker, and recreates a known walkthrough state.
 
@@ -76,6 +77,7 @@ The example `.env.example` uses a local PostgreSQL URL. If you prefer a hosted d
 ## Environment Variables
 
 - `DATABASE_URL`: Prisma connection string for the app database.
+- `DIRECT_URL`: direct PostgreSQL connection string used by Prisma migrations. For Neon, this should be the direct non-pooled URL.
 - `TEST_DATABASE_URL`: optional PostgreSQL connection string for the test schema. If unset, tests reuse `DATABASE_URL` with `schema=test`.
 - `GEMINI_API_KEY`: optional Gemini key for AI-assisted recommendation explanations and weekly summary wording.
 - `AI_PROVIDER`: optional provider selection flag. Leave unset or use `gemini` for the built-in provider.
@@ -92,10 +94,20 @@ The example `.env.example` uses a local PostgreSQL URL. If you prefer a hosted d
 
 ## Vercel Deployment
 
-1. Provision a PostgreSQL database that Vercel can reach.
-2. In Vercel, set `DATABASE_URL`, `NEXT_PUBLIC_APP_NAME`, `AI_PROVIDER=gemini`, and `GEMINI_API_KEY` if you want AI wording enabled.
-3. Deploy the repo. `vercel.json` runs `npm run build:vercel`, which applies the checked-in Prisma migrations before the Next.js build.
-4. After the first deploy, run `npm run db:seed` against the hosted database if you want the same reviewer-ready demo data in production.
+1. Provision a Neon PostgreSQL database.
+2. In Neon, copy both connection strings:
+	- the pooled connection string for app runtime queries
+	- the direct non-pooled connection string for migrations
+3. In Vercel, set:
+	- `DATABASE_URL` to the pooled Neon URL
+	- `DIRECT_URL` to the direct Neon URL
+	- `NEXT_PUBLIC_APP_NAME`
+	- `AI_PROVIDER=gemini`
+	- `GEMINI_API_KEY` if you want AI wording enabled
+4. Deploy the repo. `vercel.json` runs `npm run build:vercel`, which applies the checked-in Prisma migrations before the Next.js build.
+5. After the first deploy, run `npm run db:seed` against the hosted database if you want the same reviewer-ready demo data in production.
+
+For Neon specifically, keeping `DATABASE_URL` pooled and `DIRECT_URL` direct avoids migration issues during Vercel builds while still using the more deployment-friendly runtime connection.
 
 ## Tradeoffs and Failure Modes
 
