@@ -104,10 +104,11 @@ The example `.env.example` uses a local PostgreSQL URL. For Neon, use the pooled
 	- `NEXT_PUBLIC_APP_NAME`
 	- `AI_PROVIDER=gemini`
 	- `GEMINI_API_KEY` if you want AI wording enabled
-4. Deploy the repo. `vercel.json` runs `npm run build:vercel`, which applies the checked-in Prisma migrations before the Next.js build.
-5. After the first deploy, run `npm run db:seed` against the hosted database if you want the same reviewer-ready demo data in production.
+4. Before the first deploy, and any time the Prisma schema changes later, run `npm run db:migrate:deploy` against Neon from your machine or CI using the same `DATABASE_URL` and `DIRECT_URL` values.
+5. Deploy the repo. `vercel.json` runs `npm run build:vercel`, which only builds the app and does not attempt to acquire Prisma's migration advisory lock during the Vercel build.
+6. After the first deploy, run `npm run db:seed` against the hosted database if you want the same reviewer-ready demo data in production.
 
-For Neon specifically, keeping `DATABASE_URL` pooled and `DIRECT_URL` direct avoids migration issues during Vercel builds while still using the more deployment-friendly runtime connection.
+For Neon specifically, keeping `DATABASE_URL` pooled and `DIRECT_URL` direct avoids migration issues during runtime, but the safest deployment flow is still to run Prisma migrations outside the Vercel build so concurrent deployments do not contend on Prisma's advisory lock.
 
 ## Tradeoffs and Failure Modes
 
