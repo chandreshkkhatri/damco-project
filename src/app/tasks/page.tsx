@@ -93,9 +93,14 @@ export default async function TasksPage() {
                       </div>
                     ) : null}
                   </div>
-                  <Link className="inline-link" href={`/tasks/${task.id}`}>
-                    Edit
-                  </Link>
+                  <div className="action-row">
+                    <Link className="button button-secondary button-small" href={`/tasks/${task.id}`}>
+                      View
+                    </Link>
+                    <Link className="inline-link" href={`/tasks/${task.id}?mode=edit`}>
+                      Edit
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>

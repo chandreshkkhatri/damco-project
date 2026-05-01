@@ -13,7 +13,7 @@ export default async function TodayPage() {
       <section className="page-header">
         <p className="page-kicker">Phase 3 Recommendations</p>
         <h1>Today</h1>
-        <p>Top next actions ranked from deadlines, priority, task state, freshness, and linked note context.</p>
+        <p>Top next actions ranked from deadlines, priority, task state, freshness, and context pulled from linked notes.</p>
       </section>
       <section className="panel detail-panel">
         <div className="panel-heading">
@@ -69,7 +69,7 @@ export default async function TodayPage() {
                     ) : null}
                     {recommendation.linkedNotes.length > 0 ? (
                       <div className="linked-context">
-                        <p className="entity-meta">Linked context</p>
+                        <p className="entity-meta">Linked note context</p>
                         <div className="tag-row">
                           {recommendation.linkedNotes.slice(0, 3).map((note) => (
                             <span className="pill" key={note.id}>
@@ -79,7 +79,9 @@ export default async function TodayPage() {
                         </div>
                       </div>
                     ) : null}
-                    <p className="entity-meta">Explanation: {recommendation.explanationSource === "ai" ? "AI-assisted" : "deterministic fallback"}</p>
+                    <p className="entity-meta">
+                      Explanation source: {recommendation.explanationSource === "ai" ? "AI-assisted" : "deterministic fallback"}
+                    </p>
                   </div>
                 </li>
               );

@@ -12,10 +12,18 @@ type NoteDetailPageProps = {
   params: Promise<{
     noteId: string;
   }>;
+  searchParams?: Promise<{
+    mode?: string;
+  }>;
 };
 
-export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
+export default async function NoteDetailPage({
+  params,
+  searchParams,
+}: NoteDetailPageProps) {
   const { noteId } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const isEditing = resolvedSearchParams.mode === "edit";
 
   try {
     const note = await getNote(noteId);
@@ -30,8 +38,12 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
         <PrimaryNav />
         <section className="page-header">
           <p className="page-kicker">Phase 2 Linking</p>
-          <h1>Edit note</h1>
-          <p>Update the note content and connect it to the tasks that can use this context.</p>
+          <h1>{isEditing ? "Edit note" : "View note"}</h1>
+          <p>
+            {isEditing
+              ? "Update the note content and connect it to the tasks that can use this context."
+              : "Review the full note content and the tasks currently using this note as context."}
+          </p>
         </section>
         <section className="panel detail-panel">
           <div className="detail-header">
@@ -39,28 +51,48 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
               <p className="entity-meta">Created {new Date(note.createdAt).toLocaleString()}</p>
               <p className="entity-meta">Updated {new Date(note.updatedAt).toLocaleString()}</p>
             </div>
-            <Link className="inline-link" href="/notes">
-              Back to notes
-            </Link>
-          </div>
-          <form action={action} className="form-stack">
-            <label className="field">
-              <span>Note content</span>
-              <textarea defaultValue={note.content} name="content" required rows={14} />
-            </label>
-            <label className="field">
-              <span>Tags</span>
-              <input defaultValue={note.tags.join(", ")} name="tags" placeholder="interview, context, research" />
-            </label>
             <div className="action-row">
-              <button className="button" type="submit">
-                Save changes
-              </button>
-              <Link className="button button-secondary" href="/notes">
-                Cancel
+              {!isEditing ? (
+                <Link className="button button-secondary" href={`/notes/${note.id}?mode=edit`}>
+                  Edit note
+                </Link>
+              ) : null}
+              <Link className="inline-link" href="/notes">
+                Back to notes
               </Link>
             </div>
-          </form>
+          </div>
+          {isEditing ? (
+            <form action={action} className="form-stack">
+              <label className="field">
+                <span>Note content</span>
+                <textarea defaultValue={note.content} name="content" required rows={14} />
+              </label>
+              <label className="field">
+                <span>Tags</span>
+                <input defaultValue={note.tags.join(", ")} name="tags" placeholder="interview, context, research" />
+              </label>
+              <div className="action-row">
+                <button className="button" type="submit">
+                  Save changes
+                </button>
+                <Link className="button button-secondary" href={`/notes/${note.id}`}>
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          ) : (
+            <div className="form-stack">
+              <label className="field">
+                <span>Note content</span>
+                <textarea defaultValue={note.content} readOnly rows={14} />
+              </label>
+              <label className="field">
+                <span>Tags</span>
+                <input defaultValue={note.tags.join(", ")} readOnly />
+              </label>
+            </div>
+          )}
         </section>
         <section className="panel detail-panel">
           <div className="panel-heading">
@@ -83,17 +115,27 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
                         {task.deadline ? ` · due ${new Date(task.deadline).toLocaleDateString()}` : ""}
                       </p>
                     </div>
-                    <form action={unlinkAction}>
-                      <button className="button button-secondary button-small" type="submit">
-                        Unlink
-                      </button>
-                    </form>
+                    <div className="action-row">
+                      <Link className="button button-secondary button-small" href={`/tasks/${task.id}`}>
+                        View
+                      </Link>
+                      <Link className="inline-link" href={`/tasks/${task.id}?mode=edit`}>
+                        Edit
+                      </Link>
+                      {isEditing ? (
+                        <form action={unlinkAction}>
+                          <button className="button button-secondary button-small" type="submit">
+                            Unlink
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
-          {availableTasks.length > 0 ? (
+          {isEditing && availableTasks.length > 0 ? (
             <form action={linkAction} className="form-stack compact-form">
               <label className="field">
                 <span>Add task link</span>

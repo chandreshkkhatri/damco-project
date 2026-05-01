@@ -12,10 +12,18 @@ type TaskDetailPageProps = {
   params: Promise<{
     taskId: string;
   }>;
+  searchParams?: Promise<{
+    mode?: string;
+  }>;
 };
 
-export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
+export default async function TaskDetailPage({
+  params,
+  searchParams,
+}: TaskDetailPageProps) {
   const { taskId } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const isEditing = resolvedSearchParams.mode === "edit";
 
   try {
     const task = await getTask(taskId);
@@ -31,8 +39,12 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         <PrimaryNav />
         <section className="page-header">
           <p className="page-kicker">Phase 2 Linking</p>
-          <h1>Edit task</h1>
-          <p>Update the commitment and connect it to the notes that explain the context.</p>
+          <h1>{isEditing ? "Edit task" : "View task"}</h1>
+          <p>
+            {isEditing
+              ? "Update the commitment and connect it to the notes that explain the context."
+              : "Review the full task details and the notes currently connected to this commitment."}
+          </p>
         </section>
         <section className="panel detail-panel">
           <div className="detail-header">
@@ -40,58 +52,96 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               <p className="entity-meta">Created {new Date(task.createdAt).toLocaleString()}</p>
               <p className="entity-meta">Updated {new Date(task.updatedAt).toLocaleString()}</p>
             </div>
-            <Link className="inline-link" href="/tasks">
-              Back to tasks
-            </Link>
-          </div>
-          <form action={action} className="form-stack">
-            <label className="field">
-              <span>Title</span>
-              <input defaultValue={task.title} name="title" required />
-            </label>
-            <label className="field">
-              <span>Description</span>
-              <textarea defaultValue={task.description ?? ""} name="description" rows={6} />
-            </label>
-            <div className="field-grid">
-              <label className="field">
-                <span>Deadline</span>
-                <input defaultValue={deadlineValue} name="deadline" type="date" />
-              </label>
-              <label className="field">
-                <span>Status</span>
-                <select defaultValue={task.status} name="status">
-                  {taskStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>Priority</span>
-                <select defaultValue={task.priority} name="priority">
-                  {taskPriorities.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label className="field">
-              <span>Tags</span>
-              <input defaultValue={task.tags.join(", ")} name="tags" placeholder="backend, planning, interview" />
-            </label>
             <div className="action-row">
-              <button className="button" type="submit">
-                Save changes
-              </button>
-              <Link className="button button-secondary" href="/tasks">
-                Cancel
+              {!isEditing ? (
+                <Link className="button button-secondary" href={`/tasks/${task.id}?mode=edit`}>
+                  Edit task
+                </Link>
+              ) : null}
+              <Link className="inline-link" href="/tasks">
+                Back to tasks
               </Link>
             </div>
-          </form>
+          </div>
+          {isEditing ? (
+            <form action={action} className="form-stack">
+              <label className="field">
+                <span>Title</span>
+                <input defaultValue={task.title} name="title" required />
+              </label>
+              <label className="field">
+                <span>Description</span>
+                <textarea defaultValue={task.description ?? ""} name="description" rows={6} />
+              </label>
+              <div className="field-grid">
+                <label className="field">
+                  <span>Deadline</span>
+                  <input defaultValue={deadlineValue} name="deadline" type="date" />
+                </label>
+                <label className="field">
+                  <span>Status</span>
+                  <select defaultValue={task.status} name="status">
+                    {taskStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Priority</span>
+                  <select defaultValue={task.priority} name="priority">
+                    {taskPriorities.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {priority}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="field">
+                <span>Tags</span>
+                <input defaultValue={task.tags.join(", ")} name="tags" placeholder="backend, planning, interview" />
+              </label>
+              <div className="action-row">
+                <button className="button" type="submit">
+                  Save changes
+                </button>
+                <Link className="button button-secondary" href={`/tasks/${task.id}`}>
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          ) : (
+            <div className="form-stack">
+              <label className="field">
+                <span>Title</span>
+                <input defaultValue={task.title} readOnly />
+              </label>
+              <label className="field">
+                <span>Description</span>
+                <textarea defaultValue={task.description ?? ""} readOnly rows={6} />
+              </label>
+              <div className="field-grid">
+                <label className="field">
+                  <span>Deadline</span>
+                  <input defaultValue={deadlineValue || "No deadline"} readOnly />
+                </label>
+                <label className="field">
+                  <span>Status</span>
+                  <input defaultValue={task.status.replaceAll("_", " ")} readOnly />
+                </label>
+                <label className="field">
+                  <span>Priority</span>
+                  <input defaultValue={task.priority} readOnly />
+                </label>
+              </div>
+              <label className="field">
+                <span>Tags</span>
+                <input defaultValue={task.tags.join(", ")} readOnly />
+              </label>
+            </div>
+          )}
         </section>
         <section className="panel detail-panel">
           <div className="panel-heading">
@@ -111,17 +161,27 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
                       <p className="entity-title">{note.excerpt || "Untitled note"}</p>
                       <p className="entity-meta">Updated {new Date(note.updatedAt).toLocaleString()}</p>
                     </div>
-                    <form action={unlinkAction}>
-                      <button className="button button-secondary button-small" type="submit">
-                        Unlink
-                      </button>
-                    </form>
+                    <div className="action-row">
+                      <Link className="button button-secondary button-small" href={`/notes/${note.id}`}>
+                        View
+                      </Link>
+                      <Link className="inline-link" href={`/notes/${note.id}?mode=edit`}>
+                        Edit
+                      </Link>
+                      {isEditing ? (
+                        <form action={unlinkAction}>
+                          <button className="button button-secondary button-small" type="submit">
+                            Unlink
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
-          {availableNotes.length > 0 ? (
+          {isEditing && availableNotes.length > 0 ? (
             <form action={linkAction} className="form-stack compact-form">
               <label className="field">
                 <span>Add note link</span>

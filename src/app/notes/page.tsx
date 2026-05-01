@@ -60,9 +60,14 @@ export default async function NotesPage() {
                       </div>
                     ) : null}
                   </div>
-                  <Link className="inline-link" href={`/notes/${note.id}`}>
-                    Edit
-                  </Link>
+                  <div className="action-row">
+                    <Link className="button button-secondary button-small" href={`/notes/${note.id}`}>
+                      View
+                    </Link>
+                    <Link className="inline-link" href={`/notes/${note.id}?mode=edit`}>
+                      Edit
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
