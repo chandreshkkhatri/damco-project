@@ -1,3 +1,4 @@
+import { isAssistStoreUnavailableError } from "@/server/assist";
 import { NextResponse } from "next/server";
 
 type AssistRedirectOptions = {
@@ -25,4 +26,16 @@ export function redirectToAssist(
   }
 
   return NextResponse.redirect(url, { status: 303 });
+}
+
+export function redirectToAssistError(
+  request: Request,
+  error: unknown,
+  fallbackError: string,
+) {
+  return redirectToAssist(request, {
+    error: isAssistStoreUnavailableError(error)
+      ? "store-unavailable"
+      : fallbackError,
+  });
 }

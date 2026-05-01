@@ -1,4 +1,7 @@
-import { redirectToAssist } from "@/app/api/assist/route-helpers";
+import {
+  redirectToAssist,
+  redirectToAssistError,
+} from "@/app/api/assist/route-helpers";
 import { approveSuggestedAction } from "@/server/assist";
 
 type AssistActionRouteContext = {
@@ -14,7 +17,7 @@ export async function POST(request: Request, context: AssistActionRouteContext) 
     await approveSuggestedAction(suggestedActionId);
 
     return redirectToAssist(request, { status: "approved" });
-  } catch {
-    return redirectToAssist(request, { error: "approve" });
+  } catch (error) {
+    return redirectToAssistError(request, error, "approve");
   }
 }

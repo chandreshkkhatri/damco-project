@@ -1,4 +1,7 @@
-import { redirectToAssist } from "@/app/api/assist/route-helpers";
+import {
+  redirectToAssist,
+  redirectToAssistError,
+} from "@/app/api/assist/route-helpers";
 import { dismissSuggestedAction } from "@/server/assist";
 
 type AssistActionRouteContext = {
@@ -14,7 +17,7 @@ export async function POST(request: Request, context: AssistActionRouteContext) 
     await dismissSuggestedAction(suggestedActionId);
 
     return redirectToAssist(request, { status: "dismissed" });
-  } catch {
-    return redirectToAssist(request, { error: "dismiss" });
+  } catch (error) {
+    return redirectToAssistError(request, error, "dismiss");
   }
 }

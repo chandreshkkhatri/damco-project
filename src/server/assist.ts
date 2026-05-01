@@ -99,6 +99,58 @@ type DraftSuggestedAction = {
   sourceExcerpt?: string | null;
 };
 
+export class AssistStoreUnavailableError extends Error {
+  constructor() {
+    super(
+      "Assist suggestion storage is unavailable. Apply the SuggestedAction migration to this database.",
+    );
+    this.name = "AssistStoreUnavailableError";
+  }
+}
+
+export function isAssistStoreUnavailableError(
+  error: unknown,
+): error is AssistStoreUnavailableError {
+  return error instanceof AssistStoreUnavailableError;
+}
+
+function isMissingSuggestedActionTableError(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const code = "code" in error ? error.code : undefined;
+  const message = "message" in error ? error.message : undefined;
+  const meta = "meta" in error ? error.meta : undefined;
+  const modelName =
+    typeof meta === "object" && meta !== null && "modelName" in meta
+      ? meta.modelName
+      : undefined;
+  const tableName =
+    typeof meta === "object" && meta !== null && "table" in meta
+      ? meta.table
+      : undefined;
+
+  return (
+    code === "P2021" &&
+    (modelName === "SuggestedAction" ||
+      tableName === "public.SuggestedAction" ||
+      (typeof message === "string" && message.includes("SuggestedAction")))
+  );
+}
+
+async function withSuggestedActionStore<T>(operation: () => Promise<T>) {
+  try {
+    return await operation();
+  } catch (error) {
+    if (isMissingSuggestedActionTableError(error)) {
+      throw new AssistStoreUnavailableError();
+    }
+
+    throw error;
+  }
+}
+
 function toSuggestedActionDto(action: {
   id: string;
   actionType: string;
@@ -490,10 +542,12 @@ async function providerDrafts(
 }
 
 export async function listSuggestedActions(status?: SuggestedActionStatus) {
-  const actions = await db.suggestedAction.findMany({
-    where: status ? { status } : undefined,
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-  });
+  const actions = await withSuggestedActionStore(() =>
+    db.suggestedAction.findMany({
+      where: status ? { status } : undefined,
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    }),
+  );
 
   return actions.map(toSuggestedActionDto);
 }
@@ -558,26 +612,30 @@ export async function generateSuggestedActions(
     return [];
   }
 
-  await db.suggestedAction.createMany({
-    data: validDrafts.map((draft) => ({
-      actionType: draft.actionType,
-      title: draft.title,
-      rationale: draft.rationale,
-      payload: JSON.stringify(draft.payload),
-      sourceType: draft.sourceType ?? null,
-      sourceExcerpt: draft.sourceExcerpt ?? null,
-    })),
-  });
+  await withSuggestedActionStore(() =>
+    db.suggestedAction.createMany({
+      data: validDrafts.map((draft) => ({
+        actionType: draft.actionType,
+        title: draft.title,
+        rationale: draft.rationale,
+        payload: JSON.stringify(draft.payload),
+        sourceType: draft.sourceType ?? null,
+        sourceExcerpt: draft.sourceExcerpt ?? null,
+      })),
+    }),
+  );
 
   return listSuggestedActions(pendingStatus);
 }
 
 async function requirePendingAction(suggestedActionId: string) {
-  const action = await db.suggestedAction.findUnique({
-    where: {
-      id: suggestedActionId,
-    },
-  });
+  const action = await withSuggestedActionStore(() =>
+    db.suggestedAction.findUnique({
+      where: {
+        id: suggestedActionId,
+      },
+    }),
+  );
 
   if (!action || action.status !== pendingStatus) {
     throw new NotFoundError("Pending suggested action not found.");
@@ -629,30 +687,34 @@ export async function approveSuggestedAction(suggestedActionId: string) {
     });
   }
 
-  const updatedAction = await db.suggestedAction.update({
-    where: {
-      id: action.id,
-    },
-    data: {
-      status: "APPROVED",
-      decidedAt: new Date(),
-    },
-  });
+  const updatedAction = await withSuggestedActionStore(() =>
+    db.suggestedAction.update({
+      where: {
+        id: action.id,
+      },
+      data: {
+        status: "APPROVED",
+        decidedAt: new Date(),
+      },
+    }),
+  );
 
   return toSuggestedActionDto(updatedAction);
 }
 
 export async function dismissSuggestedAction(suggestedActionId: string) {
   const action = await requirePendingAction(suggestedActionId);
-  const updatedAction = await db.suggestedAction.update({
-    where: {
-      id: action.id,
-    },
-    data: {
-      status: "DISMISSED",
-      decidedAt: new Date(),
-    },
-  });
+  const updatedAction = await withSuggestedActionStore(() =>
+    db.suggestedAction.update({
+      where: {
+        id: action.id,
+      },
+      data: {
+        status: "DISMISSED",
+        decidedAt: new Date(),
+      },
+    }),
+  );
 
   return toSuggestedActionDto(updatedAction);
 }

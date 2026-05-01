@@ -1,4 +1,7 @@
-import { redirectToAssist } from "@/app/api/assist/route-helpers";
+import {
+  redirectToAssist,
+  redirectToAssistError,
+} from "@/app/api/assist/route-helpers";
 import { generateSuggestedActions } from "@/server/assist";
 
 export async function POST(request: Request) {
@@ -11,7 +14,7 @@ export async function POST(request: Request) {
         ? { status: "no-suggestions" }
         : { status: "generated", count: suggestions.length },
     );
-  } catch {
-    return redirectToAssist(request, { error: "generate" });
+  } catch (error) {
+    return redirectToAssistError(request, error, "generate");
   }
 }
