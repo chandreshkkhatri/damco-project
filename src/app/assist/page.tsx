@@ -10,17 +10,11 @@ import { listTasks, type TaskDto } from "@/server/tasks";
 export const dynamic = "force-dynamic";
 
 type AssistPageProps = {
-  searchParams?:
-    | Promise<{
-        count?: string;
-        error?: string;
-        status?: string;
-      }>
-    | {
-        count?: string;
-        error?: string;
-        status?: string;
-      };
+  searchParams?: Promise<{
+    count?: string;
+    error?: string;
+    status?: string;
+  }>;
 };
 
 const actionLabels: Record<SuggestedActionDto["actionType"], string> = {
