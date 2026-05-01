@@ -204,7 +204,61 @@ describe("assist suggested actions", () => {
     const tasks = await db.task.findMany();
 
     expect(notes[0]?.content).toContain("Launch review");
-    expect(tasks[0]?.title).toContain("follow up with legal");
+    expect(tasks[0]?.title).toContain("Follow up with legal");
+  });
+
+  it("prioritizes imported note and task suggestions over existing context cleanup", async () => {
+    await createLinkableFixtures();
+
+    const suggestions = await generateSuggestedActions({
+      provider: null,
+      sourceText:
+        "Subject: Launch review follow-up\n\nCan you please follow up on the launch review notes by Friday?",
+      sourceType: "manual_email",
+      limit: 2,
+    });
+
+    expect(suggestions.map((suggestion) => suggestion.actionType)).toEqual([
+      "CREATE_NOTE",
+      "CREATE_TASK",
+    ]);
+    expect(suggestions.every((suggestion) => suggestion.sourceType === "manual_email")).toBe(true);
+  });
+
+  it("cleans imported email task titles for review", async () => {
+    const suggestions = await generateSuggestedActions({
+      provider: null,
+      sourceText:
+        "Subject: Customer onboarding review\n\nPlease create a follow-up task to review customer onboarding risks by Monday and capture notes about support handoff, QA ownership, and launch messaging.",
+      sourceType: "manual_email",
+      limit: 2,
+    });
+    const taskSuggestion = suggestions.find(
+      (suggestion) => suggestion.actionType === "CREATE_TASK",
+    );
+    const noteSuggestion = suggestions.find(
+      (suggestion) => suggestion.actionType === "CREATE_NOTE",
+    );
+
+    expect(noteSuggestion?.title).toBe("Create note from Customer onboarding review");
+    expect(taskSuggestion?.payload.title).toBe("Review customer onboarding risks");
+  });
+
+  it("keeps deterministic email import focused on imported source text", async () => {
+    await createLinkableFixtures();
+
+    const suggestions = await generateSuggestedActions({
+      provider: null,
+      sourceText:
+        "Subject: Launch review follow-up\n\nCan you please follow up on the launch review notes by Friday?",
+      sourceType: "manual_email",
+      limit: 8,
+    });
+
+    expect(suggestions.map((suggestion) => suggestion.actionType)).toEqual([
+      "CREATE_NOTE",
+      "CREATE_TASK",
+    ]);
   });
 
   it("adds organization tags only after approval", async () => {
@@ -233,8 +287,8 @@ describe("assist suggested actions", () => {
   it("does not duplicate identical pending suggestions", async () => {
     await createLinkableFixtures();
 
-    await generateSuggestedActions({ provider: null, limit: 8 });
-    await generateSuggestedActions({ provider: null, limit: 8 });
+    const firstRunSuggestions = await generateSuggestedActions({ provider: null, limit: 8 });
+    const secondRunSuggestions = await generateSuggestedActions({ provider: null, limit: 8 });
 
     const pendingSuggestions = await listSuggestedActions("PENDING");
     const uniqueKeys = new Set(
@@ -244,6 +298,8 @@ describe("assist suggested actions", () => {
       ),
     );
 
+    expect(firstRunSuggestions.length).toBeGreaterThan(0);
+    expect(secondRunSuggestions).toHaveLength(0);
     expect(uniqueKeys.size).toBe(pendingSuggestions.length);
   });
 });

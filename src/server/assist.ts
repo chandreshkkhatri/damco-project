@@ -181,6 +181,16 @@ function excerpt(value: string, length = 180) {
   return value.replace(/\s+/g, " ").trim().slice(0, length);
 }
 
+function sentenceCase(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  return `${trimmed[0].toUpperCase()}${trimmed.slice(1)}`;
+}
+
 function tokenize(value: string) {
   const stopWords = new Set([
     "and",
@@ -276,6 +286,59 @@ export async function getAssistContextCounts(): Promise<AssistContextCounts> {
   return { noteCount, taskCount };
 }
 
+function cleanImportedTaskTitle(
+  actionableLine: string | undefined,
+  subjectLine: string | undefined,
+  fallbackLine: string | undefined,
+) {
+  let title = excerpt(
+    actionableLine ?? subjectLine ?? fallbackLine ?? "Review imported source",
+    180,
+  )
+    .replace(/^subject:\s*/i, "")
+    .replace(/[.!?].*$/, "");
+
+  const prefixPatterns = [
+    /^can you please\s+/i,
+    /^could you please\s+/i,
+    /^would you please\s+/i,
+    /^please\s+/i,
+    /^(?:todo|to-do|action)\s*:\s*/i,
+    /^we\s+(?:need|should)\s+to\s+/i,
+    /^i\s+need\s+to\s+/i,
+    /^need\s+to\s+/i,
+    /^(?:create|add)\s+(?:a\s+)?(?:follow[- ]up\s+)?task\s+to\s+/i,
+    /^(?:create|add)\s+(?:a\s+)?follow[- ]up\s+task\s*:?\s*/i,
+  ];
+
+  let changed = true;
+
+  while (changed) {
+    const previousTitle = title;
+
+    for (const pattern of prefixPatterns) {
+      title = title.replace(pattern, "");
+    }
+
+    changed = previousTitle !== title;
+  }
+
+  title = title
+    .replace(
+      /\s+by\s+(?:today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|[a-z]+\s+\d{1,2}(?:st|nd|rd|th)?)\b.*$/i,
+      "",
+    )
+    .replace(/\s+(?:and|then)\s+(?:capture|document|note|record)\b.*$/i, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[,;:\-\s]+|[,;:\-\s]+$/g, "");
+
+  if (!title) {
+    title = subjectLine ?? fallbackLine ?? "Review imported source";
+  }
+
+  return sentenceCase(excerpt(title, 90));
+}
+
 function sourceDrafts(
   sourceText: string,
   sourceType: string | null,
@@ -300,15 +363,18 @@ function sourceDrafts(
       line,
     ),
   );
-  const taskTitle = excerpt(
-    actionableLine ?? subjectLine ?? lines[0] ?? "Review imported source",
-    90,
+  const taskTitle = cleanImportedTaskTitle(
+    actionableLine,
+    subjectLine,
+    lines[0],
   );
 
   return [
     {
       actionType: "CREATE_NOTE",
-      title: "Create note from imported source",
+      title: subjectLine
+        ? `Create note from ${excerpt(subjectLine, 80)}`
+        : "Create note from imported source",
       rationale:
         "The imported source contains context worth preserving before any task changes are made.",
       payload: {
@@ -339,8 +405,6 @@ function sourceDrafts(
 
 function deterministicDrafts(
   context: Awaited<ReturnType<typeof getAssistContext>>,
-  sourceText: string | null,
-  sourceType: string | null,
 ) {
   const drafts: DraftSuggestedAction[] = [];
   const existingLinks = new Set(
@@ -424,10 +488,6 @@ function deterministicDrafts(
           : task.title,
       });
     }
-  }
-
-  if (sourceText) {
-    drafts.push(...sourceDrafts(sourceText, sourceType));
   }
 
   return drafts;
@@ -559,6 +619,7 @@ export async function generateSuggestedActions(
   const sourceText = options.sourceText?.trim() || null;
   const sourceType =
     options.sourceType ?? (sourceText ? "manual_import" : "existing_context");
+  const sourceSuggestions = sourceText ? sourceDrafts(sourceText, sourceType) : [];
   const provider =
     options.provider === undefined
       ? getAssistSuggestionProvider()
@@ -568,11 +629,7 @@ export async function generateSuggestedActions(
     context,
     sourceText,
   );
-  const fallbackSuggestions = deterministicDrafts(
-    context,
-    sourceText,
-    sourceType,
-  );
+  const fallbackSuggestions = sourceText ? [] : deterministicDrafts(context);
   const existingPendingActions = await listSuggestedActions(pendingStatus);
   const seen = new Set(existingPendingActions.map(uniqueKey));
   const collectValidDrafts = (candidates: DraftSuggestedAction[]) =>
@@ -601,11 +658,13 @@ export async function generateSuggestedActions(
       })
       .slice(0, options.limit ?? 8);
   let validDrafts = collectValidDrafts(
-    providerSuggestions.length > 0 ? providerSuggestions : fallbackSuggestions,
+    providerSuggestions.length > 0
+      ? [...sourceSuggestions, ...providerSuggestions]
+      : [...sourceSuggestions, ...fallbackSuggestions],
   );
 
   if (validDrafts.length === 0 && providerSuggestions.length > 0) {
-    validDrafts = collectValidDrafts(fallbackSuggestions);
+    validDrafts = collectValidDrafts([...sourceSuggestions, ...fallbackSuggestions]);
   }
 
   if (validDrafts.length === 0) {
@@ -625,7 +684,10 @@ export async function generateSuggestedActions(
     }),
   );
 
-  return listSuggestedActions(pendingStatus);
+  const createdKeys = new Set(validDrafts.map(uniqueKey));
+  const pendingActions = await listSuggestedActions(pendingStatus);
+
+  return pendingActions.filter((action) => createdKeys.has(uniqueKey(action)));
 }
 
 async function requirePendingAction(suggestedActionId: string) {

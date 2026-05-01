@@ -197,9 +197,9 @@ function suggestionHeadline(
   }
 
   if (action.actionType === "CREATE_NOTE") {
-    const content = normalizeEntityText(action.payload.content, 140);
+    const title = normalizeEntityText(action.title, 140);
 
-    return <>Create note <EntityQuote text={content || "Untitled note"} /></>;
+    return title || <>Create note <EntityQuote text="Untitled note" /></>;
   }
 
   if (action.actionType === "CREATE_TASK") {
