@@ -1,7 +1,6 @@
 import { PrimaryNav } from "@/app/primary-nav";
 import { listNotes, type NoteDto } from "@/server/notes";
 import {
-  getAssistContextCounts,
   listSuggestedActions,
   type SuggestedActionDto,
 } from "@/server/assist";
@@ -214,12 +213,15 @@ function assistFlashMessage(
 
 export default async function AssistPage({ searchParams }: AssistPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const [actions, contextCounts, notes, tasks] = await Promise.all([
+  const [actions, notes, tasks] = await Promise.all([
     listSuggestedActions(),
-    getAssistContextCounts(),
     listNotes(),
     listTasks(),
   ]);
+  const contextCounts = {
+    noteCount: notes.length,
+    taskCount: tasks.length,
+  };
   const pendingActions = actions.filter(
     (action) => action.status === "PENDING",
   );
