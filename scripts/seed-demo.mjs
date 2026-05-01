@@ -112,6 +112,7 @@ const prisma = new PrismaClient({
 });
 
 async function clearExistingDemoData() {
+  const suggestedActions = await prisma.suggestedAction.deleteMany();
   const [notes, tasks] = await Promise.all([
     prisma.note.findMany({
       where: {
@@ -135,7 +136,11 @@ async function clearExistingDemoData() {
   const taskIds = tasks.map((task) => task.id);
 
   if (noteIds.length === 0 && taskIds.length === 0) {
-    return { noteCount: 0, taskCount: 0 };
+    return {
+      noteCount: 0,
+      suggestedActionCount: suggestedActions.count,
+      taskCount: 0
+    };
   }
 
   const linkWhere = [];
@@ -178,6 +183,7 @@ async function clearExistingDemoData() {
 
   return {
     noteCount: noteIds.length,
+    suggestedActionCount: suggestedActions.count,
     taskCount: taskIds.length
   };
 }
@@ -449,7 +455,9 @@ async function main() {
   const seeded = await seedDemoData();
   const verified = await verifySeededData(seeded.now);
 
-  console.log(`Removed ${cleared.noteCount} existing demo notes and ${cleared.taskCount} existing demo tasks.`);
+  console.log(
+    `Removed ${cleared.noteCount} existing demo notes, ${cleared.taskCount} existing demo tasks, and ${cleared.suggestedActionCount} suggested actions.`,
+  );
   console.log(`Seeded ${seeded.noteCount} notes, ${seeded.taskCount} tasks, and ${seeded.linkCount} links.`);
   console.log(
     `Verified ${verified.openTaskCount} open tasks, ${verified.completedThisWeekCount} completed task this week, and ${verified.recentNoteCount} recent notes.`,
