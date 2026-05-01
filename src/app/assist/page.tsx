@@ -30,12 +30,42 @@ type AssistEntityReferences = {
   tasksById: Map<string, TaskDto>;
 };
 
+function normalizeEntityText(value: unknown, length = 160) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, length);
+}
+
 function noteLabel(noteId: string, refs: AssistEntityReferences) {
-  return refs.notesById.get(noteId)?.excerpt ?? `Note ${noteId.slice(0, 8)}`;
+  return normalizeEntityText(
+    refs.notesById.get(noteId)?.excerpt ?? `Note ${noteId.slice(0, 8)}`,
+    140,
+  );
 }
 
 function taskLabel(taskId: string, refs: AssistEntityReferences) {
-  return refs.tasksById.get(taskId)?.title ?? `Task ${taskId.slice(0, 8)}`;
+  return normalizeEntityText(
+    refs.tasksById.get(taskId)?.title ?? `Task ${taskId.slice(0, 8)}`,
+    120,
+  );
+}
+
+function EntityQuote({ text }: { text: string }) {
+  return <q className="entity-quote">{text}</q>;
+}
+
+function InlineTagList({ tags }: { tags: string[] }) {
+  return (
+    <span className="entity-tag-list">
+      {tags.map((tag, index) => (
+        <span key={`${tag}-${index}`}>
+          {index > 0 ? ", " : null}
+          <em className="entity-inline-tag">&quot;{normalizeEntityText(tag, 40)}&quot;</em>
+        </span>
+      ))}
+    </span>
+  );
 }
 
 function NoteLink({
@@ -45,7 +75,11 @@ function NoteLink({
   noteId: string;
   refs: AssistEntityReferences;
 }) {
-  return <a href={`/notes/${noteId}`}>{`"${noteLabel(noteId, refs)}"`}</a>;
+  return (
+    <a className="inline-link" href={`/notes/${noteId}`}>
+      <EntityQuote text={noteLabel(noteId, refs)} />
+    </a>
+  );
 }
 
 function TaskLink({
@@ -55,13 +89,21 @@ function TaskLink({
   taskId: string;
   refs: AssistEntityReferences;
 }) {
-  return <a href={`/tasks/${taskId}`}>{`"${taskLabel(taskId, refs)}"`}</a>;
+  return (
+    <a className="inline-link" href={`/tasks/${taskId}`}>
+      <EntityQuote text={taskLabel(taskId, refs)} />
+    </a>
+  );
 }
 
 function payloadSummary(
   action: SuggestedActionDto,
   refs: AssistEntityReferences,
 ) {
+  const tags = Array.isArray(action.payload.tags)
+    ? action.payload.tags.map((tag) => normalizeEntityText(tag, 40)).filter(Boolean)
+    : [];
+
   if (action.actionType === "LINK_NOTE_TASK") {
     const noteId = String(action.payload.noteId ?? "");
     const taskId = String(action.payload.taskId ?? "");
@@ -75,25 +117,52 @@ function payloadSummary(
   }
 
   if (action.actionType === "CREATE_NOTE") {
-    return `Create note "${String(action.payload.content ?? "")
-      .replace(/\s+/g, " ")
-      .slice(0, 160)}"`;
+    const content = normalizeEntityText(action.payload.content, 180);
+
+    return (
+      <>
+        Create note <EntityQuote text={content || "Untitled note"} />
+        {tags.length > 0 ? (
+          <>
+            {" "}with tags <InlineTagList tags={tags} />.
+          </>
+        ) : (
+          "."
+        )}
+      </>
+    );
   }
 
   if (action.actionType === "CREATE_TASK") {
-    return `Create task "${String(action.payload.title ?? "Untitled task")}"`;
-  }
+    const title = normalizeEntityText(action.payload.title, 120) || "Untitled task";
+    const description = normalizeEntityText(action.payload.description, 180);
 
-  const tags = Array.isArray(action.payload.tags)
-    ? action.payload.tags.map(String).join(", ")
-    : "";
+    return (
+      <>
+        Create task <EntityQuote text={title} />
+        {description ? (
+          <>
+            {" "}with description <EntityQuote text={description} />
+          </>
+        ) : null}
+        {tags.length > 0 ? (
+          <>
+            {" "}and tags <InlineTagList tags={tags} />.
+          </>
+        ) : (
+          "."
+        )}
+      </>
+    );
+  }
 
   if (action.actionType === "ADD_NOTE_TAGS") {
     const noteId = String(action.payload.noteId ?? "");
 
     return (
       <>
-        Add {tags || "suggested tags"} to note <NoteLink noteId={noteId} refs={refs} />.
+        Add {tags.length > 0 ? <InlineTagList tags={tags} /> : "suggested tags"} to note{" "}
+        <NoteLink noteId={noteId} refs={refs} />.
       </>
     );
   }
@@ -103,12 +172,55 @@ function payloadSummary(
 
     return (
       <>
-        Add {tags || "suggested tags"} to task <TaskLink refs={refs} taskId={taskId} />.
+        Add {tags.length > 0 ? <InlineTagList tags={tags} /> : "suggested tags"} to task{" "}
+        <TaskLink refs={refs} taskId={taskId} />.
       </>
     );
   }
 
-  return tags ? `Add ${tags}` : "Add suggested tags";
+  return tags.length > 0 ? <InlineTagList tags={tags} /> : "Add suggested tags";
+}
+
+function suggestionHeadline(
+  action: SuggestedActionDto,
+  refs: AssistEntityReferences,
+) {
+  if (action.actionType === "LINK_NOTE_TASK") {
+    const noteId = String(action.payload.noteId ?? "");
+    const taskId = String(action.payload.taskId ?? "");
+
+    return (
+      <>
+        Link <NoteLink noteId={noteId} refs={refs} /> to <TaskLink refs={refs} taskId={taskId} />
+      </>
+    );
+  }
+
+  if (action.actionType === "CREATE_NOTE") {
+    const content = normalizeEntityText(action.payload.content, 140);
+
+    return <>Create note <EntityQuote text={content || "Untitled note"} /></>;
+  }
+
+  if (action.actionType === "CREATE_TASK") {
+    const title = normalizeEntityText(action.payload.title, 120) || "Untitled task";
+
+    return <>Create task <EntityQuote text={title} /></>;
+  }
+
+  if (action.actionType === "ADD_NOTE_TAGS") {
+    const noteId = String(action.payload.noteId ?? "");
+
+    return <>Add tags to note <NoteLink noteId={noteId} refs={refs} /></>;
+  }
+
+  if (action.actionType === "ADD_TASK_TAGS") {
+    const taskId = String(action.payload.taskId ?? "");
+
+    return <>Add tags to task <TaskLink refs={refs} taskId={taskId} /></>;
+  }
+
+  return action.title;
 }
 
 function SuggestedActionItem({
@@ -130,11 +242,21 @@ function SuggestedActionItem({
             </span>
           ) : null}
         </div>
-        <p className="entity-title">{action.title}</p>
-        <p className="entity-meta">{action.rationale}</p>
-        <p className="entity-meta">{payloadSummary(action, refs)}</p>
+        <p className="entity-title">{suggestionHeadline(action, refs)}</p>
+        <p className="entity-meta">
+          <span className="entity-meta-label">Why:</span> {action.rationale}
+        </p>
+        <p className="entity-meta">
+          <span className="entity-meta-label">Suggested change:</span>{" "}
+          {payloadSummary(action, refs)}
+        </p>
         {action.sourceExcerpt ? (
-          <p className="entity-meta">Source: {action.sourceExcerpt}</p>
+          <div className="entity-source">
+            <p className="entity-meta entity-source-label">Source excerpt</p>
+            <blockquote className="entity-source-quote">
+              {normalizeEntityText(action.sourceExcerpt, 220)}
+            </blockquote>
+          </div>
         ) : null}
       </div>
       {action.status === "PENDING" ? (

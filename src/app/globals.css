@@ -283,6 +283,45 @@ a {
   font-size: 0.9rem;
 }
 
+.entity-meta-label {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.entity-quote {
+  color: var(--text);
+  font-style: italic;
+}
+
+.entity-tag-list {
+  color: var(--text);
+}
+
+.entity-inline-tag {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.entity-source {
+  margin-top: 0.75rem;
+}
+
+.entity-source-label {
+  margin-top: 0;
+}
+
+.entity-source-quote {
+  margin: 0.4rem 0 0;
+  padding: 0.8rem 0.95rem;
+  border-left: 3px solid rgba(185, 92, 50, 0.35);
+  border-radius: 12px;
+  background: rgba(185, 92, 50, 0.08);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-style: italic;
+  line-height: 1.6;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
