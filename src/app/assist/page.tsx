@@ -1,9 +1,11 @@
 import { PrimaryNav } from "@/app/primary-nav";
+import { listNotes, type NoteDto } from "@/server/notes";
 import {
   getAssistContextCounts,
   listSuggestedActions,
   type SuggestedActionDto,
 } from "@/server/assist";
+import { listTasks, type TaskDto } from "@/server/tasks";
 
 export const dynamic = "force-dynamic";
 
@@ -29,29 +31,99 @@ const actionLabels: Record<SuggestedActionDto["actionType"], string> = {
   ADD_TASK_TAGS: "Task tags",
 };
 
-function payloadSummary(action: SuggestedActionDto) {
+type AssistEntityReferences = {
+  notesById: Map<string, NoteDto>;
+  tasksById: Map<string, TaskDto>;
+};
+
+function noteLabel(noteId: string, refs: AssistEntityReferences) {
+  return refs.notesById.get(noteId)?.excerpt ?? `Note ${noteId.slice(0, 8)}`;
+}
+
+function taskLabel(taskId: string, refs: AssistEntityReferences) {
+  return refs.tasksById.get(taskId)?.title ?? `Task ${taskId.slice(0, 8)}`;
+}
+
+function NoteLink({
+  noteId,
+  refs,
+}: {
+  noteId: string;
+  refs: AssistEntityReferences;
+}) {
+  return <a href={`/notes/${noteId}`}>{`"${noteLabel(noteId, refs)}"`}</a>;
+}
+
+function TaskLink({
+  taskId,
+  refs,
+}: {
+  taskId: string;
+  refs: AssistEntityReferences;
+}) {
+  return <a href={`/tasks/${taskId}`}>{`"${taskLabel(taskId, refs)}"`}</a>;
+}
+
+function payloadSummary(
+  action: SuggestedActionDto,
+  refs: AssistEntityReferences,
+) {
   if (action.actionType === "LINK_NOTE_TASK") {
-    return `Note ${String(action.payload.noteId).slice(0, 8)} to task ${String(action.payload.taskId).slice(0, 8)}`;
+    const noteId = String(action.payload.noteId ?? "");
+    const taskId = String(action.payload.taskId ?? "");
+
+    return (
+      <>
+        Link note <NoteLink noteId={noteId} refs={refs} /> to task{" "}
+        <TaskLink refs={refs} taskId={taskId} />.
+      </>
+    );
   }
 
   if (action.actionType === "CREATE_NOTE") {
-    return String(action.payload.content ?? "")
+    return `Create note "${String(action.payload.content ?? "")
       .replace(/\s+/g, " ")
-      .slice(0, 160);
+      .slice(0, 160)}"`;
   }
 
   if (action.actionType === "CREATE_TASK") {
-    return String(action.payload.title ?? "Untitled task");
+    return `Create task "${String(action.payload.title ?? "Untitled task")}"`;
   }
 
   const tags = Array.isArray(action.payload.tags)
     ? action.payload.tags.map(String).join(", ")
     : "";
 
+  if (action.actionType === "ADD_NOTE_TAGS") {
+    const noteId = String(action.payload.noteId ?? "");
+
+    return (
+      <>
+        Add {tags || "suggested tags"} to note <NoteLink noteId={noteId} refs={refs} />.
+      </>
+    );
+  }
+
+  if (action.actionType === "ADD_TASK_TAGS") {
+    const taskId = String(action.payload.taskId ?? "");
+
+    return (
+      <>
+        Add {tags || "suggested tags"} to task <TaskLink refs={refs} taskId={taskId} />.
+      </>
+    );
+  }
+
   return tags ? `Add ${tags}` : "Add suggested tags";
 }
 
-function SuggestedActionItem({ action }: { action: SuggestedActionDto }) {
+function SuggestedActionItem({
+  action,
+  refs,
+}: {
+  action: SuggestedActionDto;
+  refs: AssistEntityReferences;
+}) {
   return (
     <li className="entity-item">
       <div>
@@ -66,7 +138,7 @@ function SuggestedActionItem({ action }: { action: SuggestedActionDto }) {
         </div>
         <p className="entity-title">{action.title}</p>
         <p className="entity-meta">{action.rationale}</p>
-        <p className="entity-meta">{payloadSummary(action)}</p>
+        <p className="entity-meta">{payloadSummary(action, refs)}</p>
         {action.sourceExcerpt ? (
           <p className="entity-meta">Source: {action.sourceExcerpt}</p>
         ) : null}
@@ -148,9 +220,11 @@ function assistFlashMessage(
 
 export default async function AssistPage({ searchParams }: AssistPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const [actions, contextCounts] = await Promise.all([
+  const [actions, contextCounts, notes, tasks] = await Promise.all([
     listSuggestedActions(),
     getAssistContextCounts(),
+    listNotes(),
+    listTasks(),
   ]);
   const pendingActions = actions.filter(
     (action) => action.status === "PENDING",
@@ -164,6 +238,10 @@ export default async function AssistPage({ searchParams }: AssistPageProps) {
     resolvedSearchParams.error,
     resolvedSearchParams.count,
   );
+  const refs: AssistEntityReferences = {
+    notesById: new Map(notes.map((note) => [note.id, note])),
+    tasksById: new Map(tasks.map((task) => [task.id, task])),
+  };
 
   return (
     <main className="page-shell">
@@ -250,7 +328,7 @@ export default async function AssistPage({ searchParams }: AssistPageProps) {
         ) : (
           <ul className="entity-list">
             {pendingActions.map((action) => (
-              <SuggestedActionItem action={action} key={action.id} />
+              <SuggestedActionItem action={action} key={action.id} refs={refs} />
             ))}
           </ul>
         )}
@@ -267,7 +345,7 @@ export default async function AssistPage({ searchParams }: AssistPageProps) {
         {decidedActions.length === 0 ? null : (
           <ul className="entity-list">
             {decidedActions.map((action) => (
-              <SuggestedActionItem action={action} key={action.id} />
+              <SuggestedActionItem action={action} key={action.id} refs={refs} />
             ))}
           </ul>
         )}
